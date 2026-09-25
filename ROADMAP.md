@@ -8,7 +8,7 @@ Ordered. One item at a time; each is ticked only when its tests pass and it is p
 - [x] 4. Frontend: index.html + one JS file served by the backend; State B (Main.dc.html), then A′, A, C; live chain state
 - [x] 5. Playwright e2e on an Anvil fork: all four states, World cancel path, revoke, C → B recovery
 - [x] 6. Agent script: ship and dock through the Vault
-- [ ] 7. README update
+- [x] 7. README update
 
 ## Blocked (needs the user)
 - World app_id / rp_id / signing key (phase 3 runs on env placeholders until then)
