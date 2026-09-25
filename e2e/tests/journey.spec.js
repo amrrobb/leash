@@ -164,6 +164,8 @@ test.describe.serial("Leash journey on a Sepolia fork", () => {
     await expect(page.getByTestId("status")).toHaveText("Close-only");
     await expect(page.getByTestId("c-note")).toHaveText("You revoked the mandate.");
     await expect(page.getByTestId("revoke")).toBeHidden();
+    await expect(page.getByTestId("verify-again")).toBeHidden();
+    await expect(page.getByTestId("restore")).toBeVisible();
     const s = await state(request);
     expect(s.alive).toBe(false);
     expect(s.cap).toBe("0");
@@ -172,5 +174,14 @@ test.describe.serial("Leash journey on a Sepolia fork", () => {
   test("Withdraw: the owner takes the funds home", async () => {
     await page.getByTestId("withdraw").click();
     await expect(page.getByTestId("feed")).toContainText("You withdrew");
+  });
+
+  test("Restore: only Alice can bring a revoked mandate back", async ({ request }) => {
+    await page.getByTestId("restore").click();
+    await expect(page.getByTestId("status")).not.toHaveText("Close-only");
+    await expect(page.getByTestId("verify-again")).toBeVisible();
+    const s = await state(request);
+    expect(s.alive).toBe(true);
+    expect(usd(s.cap)).toBeGreaterThan(0);
   });
 });
