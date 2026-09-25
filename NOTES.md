@@ -6,7 +6,10 @@ Log as you go: timestamp · sponsor · what you tried · what broke · how long 
 - 
 
 ## ENS
-- 
+- 2026-09-26 04:00 JST · delegation · Plan was: Alice grants the backend tier-admin bits on the `agent` token. Impossible: `PermissionedRegistry._getSettableRoles` returns `roleBitmap >> 128` for token resources, so token admin bits exist only if passed at `register()` and can never be delegated. Root roles are exempt and `hasRoles` = root | token, so the backend gets `(ORB|DOCUMENT|SELFIE) << 128` at ROOT via `grantRootRoles`. It can set tiers on any name in Alice's registry but can never grant or revoke MANDATE. Proven on fork (test/fork/ENSAuthority.t.sol). Cost ~30 min reading source; not in any doc we found.
+- 2026-09-26 04:00 JST · reads · `roles(anyId, account)` returns token roles only (root excluded); `hasRoles` includes root. `uint256(keccak256(label))` (version bits zero) is a valid anyId for both, so a contract can skip `findTokenId`. Every grant/revoke regenerates the token id (burn + mint, `tokenVersionId++`).
+- 2026-09-26 04:00 JST · gas (cold, fork) · roles() 29.6k · hasRoles() 32.1k · findTokenId() 16.0k.
+- 2026-09-26 04:00 JST · test trap · `makeAddr("alice")` on a Sepolia fork has an EIP-7702 delegation (`0xef0100...`), so the ERC1155 mint's `onERC1155Received` reverts. Use unique labels (`leash.alice`).
 
 ## 1inch
 - 2026-09-26 02:40 JST · setup · swap-vm `main` @ feb1641 pulls Aqua as an npm dep (`@1inch/aqua` github#v1.0.0), not a submodule. Adding 1inch/aqua separately would give two copies. Fix: `cd lib/swap-vm && yarn install --frozen-lockfile --production --ignore-scripts`, remap to `lib/swap-vm/node_modules/*`. Cost ~5 min.
