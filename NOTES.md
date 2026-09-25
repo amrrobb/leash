@@ -12,6 +12,10 @@ Log as you go: timestamp · sponsor · what you tried · what broke · how long 
 - 2026-09-26 04:00 JST · test trap · `makeAddr("alice")` on a Sepolia fork has an EIP-7702 delegation (`0xef0100...`), so the ERC1155 mint's `onERC1155Received` reverts. Use unique labels (`leash.alice`).
 
 ## 1inch
+- 2026-09-26 06:00 JST · program order · HANDOFF/CLAUDE said "FeeProtocol must be the first instruction". Not true on swap-vm main @ feb1641: FeeProtocol is optional, docs/PROGRAMS.md only says fee placement is security-critical. Leash program: MandateGate -> XYCSwap -> Salt (no fee). Removed the rule.
+- 2026-09-26 06:00 JST · computed-leg trimming · the gate runs before XYCSwap, so when the cap token is the leg the curve computes (exact-in selling HYPE for USDC, or exact-out buying HYPE with USDC) it trims the taker's leg with the inverse of x*y=k. Couples the gate to XYCSwap; documented in MandateGate.sol. Fuzzed: the USDC leg never exceeds capNow().
+- 2026-09-26 06:00 JST · Aqua strategy = abi.encode(order); Aqua's keccak256(strategy) equals SwapVM `hash(order)` only in that encoding. Asserted in GateBase._ship.
+- 2026-09-26 06:05 JST · MandateAquaRouter 22,493 B (margin 2,083). Gate overhead: 26.6k gas per swap cold on real ENSv2 (119.5k vs 92.9k), 4.6k warm with a mock registry.
 - 2026-09-26 02:40 JST · setup · swap-vm `main` @ feb1641 pulls Aqua as an npm dep (`@1inch/aqua` github#v1.0.0), not a submodule. Adding 1inch/aqua separately would give two copies. Fix: `cd lib/swap-vm && yarn install --frozen-lockfile --production --ignore-scripts`, remap to `lib/swap-vm/node_modules/*`. Cost ~5 min.
 - 2026-09-26 02:45 JST · size · AquaSwapVMRouter is 21,981 B on main @ feb1641 (v0 measured 20,858 B on an older main). Margin 2,595 B; MandateGate (+455 B in v0) still fits, ~2.1 KB left. Re-check on every pull.
 - 2026-09-26 02:45 JST · Aqua semantics · `pull()` does `safeTransferFrom(maker, ...)` from Aqua, so a contract maker must `approve(aqua)`. `strategyHash = keccak256(strategy)`, and a docked hash can never be re-shipped (StrategiesMustBeImmutable), so every re-ship needs a fresh `Salt`. `dock()` needs the full token list, not just the hash.
