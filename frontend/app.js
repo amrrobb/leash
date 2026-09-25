@@ -149,6 +149,7 @@ if (typeof document !== "undefined") {
     const screen = screenOf(snap.state, session);
     show(screen);
     if (screen === "BC") renderDashboard();
+    if (screen === "A2") renderA2();
     document.body.dataset.screen = screen;
   }
 
@@ -178,10 +179,155 @@ if (typeof document !== "undefined") {
     }
   }
 
+
+  // ---------------------------------------------------------------- State A and A'
+
+  function renderTierRows() {
+    $("tier-rows").replaceChildren(
+      ...[TIERS.selfie, TIERS.document, TIERS.orb].map((t) => {
+        const row = document.createElement("div");
+        row.className = "tier";
+        row.innerHTML = `<div><div class="tn"></div><div class="td"></div></div><span class="mono" style="font-size:17px"></span>`;
+        row.querySelector(".tn").textContent = t.name;
+        row.querySelector(".td").textContent = t.note;
+        row.querySelector(".mono").textContent = `${fmt(t.cap)} USDC`;
+        return row;
+      }),
+    );
+  }
+
+  function renderA2() {
+    const t = TIERS[session.tier];
+    $("a2-verified").textContent = `Verified · ${t.name}`;
+    $("a2-headline").textContent = `Authority up to ${fmt(t.cap)} USDC`;
+    $("a2-max").textContent = `max ${fmt(t.cap)} · can only go down`;
+    const input = $("a2-cap");
+    input.max = String(t.cap);
+    if (!input.value) input.value = String(t.cap);
+  }
+
+  function step(done, text, tx) {
+    const el = document.createElement("div");
+    el.className = done ? "done" : "";
+    el.textContent = `${done ? "☑" : "☐"} ${text}${tx ? `   ${tx.slice(0, 6)}…${tx.slice(-4)}` : ""}`;
+    return el;
+  }
+
+  $("create-mandate").addEventListener("click", async (e) => {
+    const t = TIERS[session.tier];
+    const value = Math.floor(Number($("a2-cap").value));
+    $("a2-err").hidden = true;
+    if (!(value >= 1 && value <= t.cap)) {
+      $("a2-err").hidden = false;
+      $("a2-err").textContent = `Choose between 1 and ${fmt(t.cap)} USDC. Authority can only go down from your credential's cap.`;
+      return;
+    }
+    e.currentTarget.disabled = true;
+    const tx = session.txs ?? {};
+    const steps = [step(true, "Role granted on agent.leash.eth", tx.grantTier), step(true, "Vault clock stamped", tx.verify)];
+    $("a2-steps").replaceChildren(...steps, step(false, "Starting authority set", "pending…"));
+    try {
+      const out = await api("/api/demo/set-cap", { cap: String(BigInt(value) * 1_000_000n) });
+      $("a2-steps").replaceChildren(...steps, step(true, "Starting authority set", out.tx));
+      session.tier = null;
+      await poll();
+    } catch (err) {
+      $("a2-err").hidden = false;
+      $("a2-err").textContent = err.message;
+    } finally {
+      e.currentTarget.disabled = false;
+    }
+  });
+
+  // ---------------------------------------------------------------- World ID modal
+
+  let attempt = 0;
+
+  function loadIDKit() {
+    if (window.IDKit) return Promise.resolve(window.IDKit);
+    return new Promise((resolve, reject) => {
+      const s = document.createElement("script");
+      s.src = "/vendor/idkit.global.js";
+      s.onload = () => resolve(window.IDKit);
+      s.onerror = () => reject(new Error("could not load IDKit"));
+      document.head.append(s);
+    });
+  }
+
+  function drawQR(uri) {
+    const box = $("qr");
+    $("vm-link").href = uri;
+    $("vm-link").hidden = false;
+    box.dataset.uri = uri;
+    if (window.qrcode) {
+      const q = window.qrcode(0, "M");
+      q.addData(uri);
+      q.make();
+      box.innerHTML = q.createImgTag(4, 0);
+    } else {
+      box.innerHTML = '<span class="quiet">Use the link below</span>';
+    }
+  }
+
+  function closeModal() {
+    $("verify-modal").hidden = true;
+  }
+
+  async function startVerify() {
+    const mine = ++attempt;
+    $("cancelled").hidden = true;
+    $("vm-err").hidden = true;
+    $("vm-link").hidden = true;
+    $("qr").innerHTML = '<span class="quiet">Preparing…</span>';
+    $("verify-modal").hidden = false;
+    try {
+      const ctx = await api("/api/rp-context", {});
+      const IDKit = await loadIDKit();
+      const request = await IDKit.request({
+        app_id: ctx.app_id,
+        action: ctx.action,
+        rp_context: ctx.rp_context,
+        allow_legacy_proofs: false,
+        environment: ctx.environment,
+      }).constraints(
+        IDKit.any(
+          IDKit.CredentialRequest("proof_of_human"),
+          IDKit.CredentialRequest("passport"),
+          IDKit.CredentialRequest("mnc"),
+          IDKit.CredentialRequest("selfie"),
+        ),
+      );
+      if (mine !== attempt) return;
+      drawQR(request.connectorURI);
+      const completion = await request.pollUntilCompletion({ pollInterval: 2000, timeout: 180_000 });
+      if (mine !== attempt) return; // cancelled while waiting: ignore the result, send nothing
+      if (!completion.success) throw new Error(completion.error === "user_rejected" ? "You declined in World App. Nothing was granted." : `World ID: ${completion.error}`);
+      const out = await api("/api/proof", completion.result);
+      session.tier = out.tier;
+      session.txs = out.txs;
+      closeModal();
+      await poll();
+      if (screenOf(snap.state, session) === "A2") renderA2();
+    } catch (err) {
+      if (mine !== attempt) return;
+      $("vm-err").hidden = false;
+      $("vm-err").textContent = err.status === 503 ? "World ID isn't configured on this server yet." : err.message;
+    }
+  }
+
+  $("vm-cancel").addEventListener("click", () => {
+    attempt++; // any in-flight poll result is now ignored
+    closeModal();
+    if (!snap || screenOf(snap.state, session) === "A") $("cancelled").hidden = false;
+  });
+  $("verify-first").addEventListener("click", startVerify);
+  $("verify-again").addEventListener("click", startVerify);
+  renderTierRows();
+
   $("revoke").addEventListener("click", (e) => ownerAction(e.currentTarget, "/api/demo/revoke"));
   $("withdraw").addEventListener("click", (e) => ownerAction(e.currentTarget, "/api/demo/withdraw"));
 
-  window.leash = { session, api, poll, render, ownerAction, $, get snap() { return snap; } };
+  window.leash = { session, api, poll, render, ownerAction, startVerify, $, get snap() { return snap; } };
   poll();
   setInterval(poll, 3000);
   setInterval(render, 1000);

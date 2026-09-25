@@ -65,6 +65,26 @@ a { color: var(--accent); }
 .tone-ok { background: var(--accent-tint); color: var(--accent-ink); }
 .tone-trim { background: var(--trim-tint); color: var(--trim-ink); }
 .tone-pause { background: var(--pause-tint); color: var(--pause-ink); }
+.solo { max-width: 760px; padding: 40px; display: flex; flex-direction: column; gap: 18px; }
+.solo h1 { margin: 0; font-size: 34px; font-weight: 600; letter-spacing: -0.02em; line-height: 1.2; }
+.solo p { margin: 0; font-size: 16px; color: var(--muted); line-height: 1.55; }
+.tiers { display: flex; flex-direction: column; gap: 10px; }
+.tier { display: flex; justify-content: space-between; align-items: center; gap: 16px; min-height: 64px; padding: 0 20px; border: 1.5px solid var(--border); border-radius: 12px; background: var(--surface); }
+.tier.current { border-color: var(--accent); background: var(--bg); }
+.tier .tn { font-size: 16px; font-weight: 600; }
+.tier .td { font-size: 13px; color: var(--muted); margin-top: 3px; }
+.quiet { font-size: 14px; color: var(--muted); }
+.field { display: flex; flex-direction: column; gap: 6px; }
+.field label { font-size: 13px; color: var(--muted); }
+.field .box { display: flex; align-items: center; gap: 10px; height: 48px; padding: 0 14px; border: 1px solid var(--border); border-radius: 10px; font-size: 16px; }
+.field input { border: none; outline: none; font: 500 20px 'IBM Plex Mono', monospace; width: 160px; background: transparent; color: var(--text); }
+.verified-chip { align-self: flex-start; }
+.steps { display: flex; flex-direction: column; gap: 8px; font-size: 14px; }
+.steps .done { color: var(--accent-ink); }
+.modal-back { position: fixed; inset: 0; background: rgba(22,21,15,.35); display: flex; align-items: center; justify-content: center; padding: 16px; }
+.modal { width: 440px; max-width: 100%; padding: 32px; display: flex; flex-direction: column; gap: 14px; align-items: center; text-align: center; }
+.qr { width: 232px; height: 232px; display: flex; align-items: center; justify-content: center; border: 1px solid var(--border); border-radius: 12px; background: #fff; }
+.qr img, .qr canvas { width: 212px; height: 212px; image-rendering: pixelated; }
 [hidden] { display: none !important; }
 .err { font-size: 13px; color: var(--trim-ink); margin-top: 10px; }
 @media (max-width: 1100px) { .row { flex-direction: column; } .auth { width: auto; } .page { padding: 20px 16px; } .big .mono { font-size: 60px; } }
@@ -79,6 +99,43 @@ a { color: var(--accent); }
     </div>
     <div class="who"><span>Sepolia</span><span class="pill-name" data-testid="owner-name">leash.eth</span></div>
   </header>
+
+
+  <!-- State A: no mandate yet -->
+  <section id="state-a" class="card solo" data-testid="state-a" hidden>
+    <h1>Give your agent permission<br>that shrinks on its own.</h1>
+    <p>Your funds stay in your vault. The agent gets a leash, and the leash shortens every hour you are away.</p>
+    <button class="btn" id="verify-first" data-testid="verify-with-world" style="align-self:flex-start">Verify with World</button>
+    <div class="quiet" id="cancelled" data-testid="cancelled" hidden>Verification cancelled. Nothing was granted.</div>
+    <div class="tiers" id="tier-rows"></div>
+  </section>
+
+  <!-- State A': proof accepted, create the mandate -->
+  <section id="state-a2" class="card solo" data-testid="state-a2" hidden>
+    <span class="status tone-ok verified-chip"><i></i><span id="a2-verified">Verified</span></span>
+    <h1 id="a2-headline" style="font-size:28px">Authority up to 0 USDC</h1>
+    <div class="field"><label>Agent name</label><div class="box"><span class="mono" style="font-size:16px">agent</span><span class="quiet">→ agent.leash.eth</span></div></div>
+    <div class="field"><label>Pair</label><div class="box">HYPE / USDC</div></div>
+    <div class="field"><label for="a2-cap">Starting authority</label>
+      <div class="box"><input id="a2-cap" data-testid="starting-authority" type="number" min="1" step="1"><span class="quiet">USDC</span><span class="quiet" id="a2-max" style="margin-left:auto"></span></div></div>
+    <p style="font-size:14px">Halves every 24 hours unless you return · Reaches zero in ~3 days</p>
+    <button class="btn" id="create-mandate" data-testid="create-mandate" style="align-self:flex-start">Create mandate</button>
+    <div class="steps" id="a2-steps" data-testid="a2-steps"></div>
+    <div class="err" id="a2-err" hidden></div>
+  </section>
+
+  <!-- World ID modal (A and B/C) -->
+  <div class="modal-back" id="verify-modal" data-testid="verify-modal" hidden>
+    <div class="card modal" role="dialog" aria-labelledby="vm-title">
+      <span class="eyebrow">World ID</span>
+      <h2 id="vm-title" style="margin:0;font-size:24px">Scan with World App</h2>
+      <div class="qr" id="qr" data-testid="qr"><span class="quiet">Preparing…</span></div>
+      <p class="quiet" id="vm-text">Pick a credential in the app. It sets how much authority the agent gets.</p>
+      <a id="vm-link" class="quiet" target="_blank" rel="noopener" hidden>Open in World App</a>
+      <div class="err" id="vm-err" data-testid="verify-error" hidden></div>
+      <button class="btn link" id="vm-cancel" data-testid="verify-cancel">Cancel</button>
+    </div>
+  </div>
 
   <!-- States B and C: one layout, different values -->
   <section id="dashboard" data-testid="dashboard" hidden>
@@ -123,6 +180,7 @@ a { color: var(--accent); }
     </div>
   </section>
 </main>
+<script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js" defer></script>
 <script src="/app.js" type="module"></script>
 </body>
 </html>
