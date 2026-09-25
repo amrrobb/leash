@@ -47,6 +47,7 @@ contract Vault {
     mapping(bytes32 strategyHash => Position) internal _positions;
 
     event Verified(uint64 at);
+    event Docked(bytes32 indexed strategyHash);
     event Shipped(bytes32 indexed strategyHash, address indexed app, address[] tokens, uint256[] amounts);
     event CapSet(uint256 cap);
 
@@ -55,6 +56,7 @@ contract Vault {
     error NotAgentOrOwner();
     error NoMandate();
     error MandateEmpty();
+    error UnknownStrategy();
 
     modifier onlyOwner() {
         require(msg.sender == owner, NotOwner());
@@ -104,6 +106,16 @@ contract Vault {
         strategyHash = aqua.ship(app, strategy, tokens, amounts);
         _positions[strategyHash] = Position(app, tokens);
         emit Shipped(strategyHash, app, tokens, amounts);
+    }
+
+    /// @notice Closes a position. Deliberately reads no ENS state: closing must work after revoke or decay.
+    function dock(bytes32 strategyHash) external {
+        require(msg.sender == agent || msg.sender == owner, NotAgentOrOwner());
+        Position memory p = _positions[strategyHash];
+        require(p.app != address(0), UnknownStrategy());
+        delete _positions[strategyHash];
+        aqua.dock(p.app, strategyHash, p.tokens);
+        emit Docked(strategyHash);
     }
 
     /// @notice Highest tier the agent currently holds on its ENS name, capped by the owner.
