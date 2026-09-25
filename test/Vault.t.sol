@@ -271,4 +271,108 @@ contract VaultTest is Test {
         vault.withdraw(IERC20(address(usdc)), 1_000e6);
         assertEq(usdc.balanceOf(owner), 1_000e6);
     }
+
+    // ---- bookkeeping across several positions ----
+
+    function test_twoPositions_dockOneKeepsOther() public {
+        bytes32 h1 = _ship("s1");
+        bytes32 h2 = _ship("s2");
+        vm.prank(agent);
+        vault.dock(h1);
+        assertEq(_bal(h1, address(usdc)), 0);
+        assertEq(_bal(h2, address(usdc)), 1_000e6);
+        vm.prank(owner);
+        vault.dock(h2);
+        assertEq(_bal(h2, address(usdc)), 0);
+    }
+
+    function test_dock_unknownHashReverts() public {
+        vm.prank(agent);
+        vm.expectRevert(Vault.UnknownStrategy.selector);
+        vault.dock(keccak256("never shipped"));
+    }
+
+    // ---- events ----
+
+    function test_events_shipDockVerifyCapWithdraw() public {
+        (address[] memory t, uint256[] memory a) = _tokens();
+        bytes32 h = keccak256("s1");
+        vm.expectEmit(address(vault));
+        emit Vault.Shipped(h, app, t, a);
+        vm.prank(agent);
+        vault.ship(app, "s1", t, a);
+
+        vm.expectEmit(address(vault));
+        emit Vault.Docked(h);
+        vm.prank(agent);
+        vault.dock(h);
+
+        vm.expectEmit(address(vault));
+        emit Vault.Verified(uint64(block.timestamp));
+        vm.prank(backend);
+        vault.verify();
+
+        vm.expectEmit(address(vault));
+        emit Vault.CapSet(123);
+        vm.prank(owner);
+        vault.setCap(123);
+
+        vm.expectEmit(address(vault));
+        emit Vault.Withdrawn(address(usdc), 1);
+        vm.prank(owner);
+        vault.withdraw(IERC20(address(usdc)), 1);
+    }
+
+    // ---- approvals ----
+
+    function test_approval_setOnceAndReused() public {
+        _ship("s1");
+        assertEq(usdc.allowance(address(vault), address(aqua)), type(uint256).max);
+        assertEq(hype.allowance(address(vault), address(aqua)), type(uint256).max);
+        _ship("s2");
+        assertEq(usdc.allowance(address(vault), address(aqua)), type(uint256).max);
+    }
+
+    function test_approval_neverGrantedToApp() public {
+        _ship("s1");
+        assertEq(usdc.allowance(address(vault), app), 0);
+    }
+
+    // ---- withdraw while a position is open ----
+
+    /// Aqua balances are virtual: if the owner pulls the real tokens, fills fail but closing still works.
+    function test_withdrawWhileShipped_fillsFailDockWorks() public {
+        bytes32 h = _ship("s1");
+        vm.prank(owner);
+        vault.withdraw(IERC20(address(usdc)), 10_000e6);
+        vm.prank(app);
+        vm.expectRevert();
+        aqua.pull(address(vault), h, address(usdc), 1e6, makeAddr("taker"));
+        vm.prank(agent);
+        vault.dock(h);
+    }
+
+    // ---- verify and cap interplay ----
+
+    function testFuzz_capNow_neverAboveBase(uint256 dt) public {
+        dt = bound(dt, 0, 10 days);
+        vm.warp(block.timestamp + dt);
+        assertLe(vault.capNow(), vault.baseCap());
+    }
+
+    function test_setCap_midDecay_scalesImmediately() public {
+        vm.warp(block.timestamp + 1 days);
+        assertEq(vault.capNow(), 1_000e6);
+        vm.prank(owner);
+        vault.setCap(400e6);
+        assertEq(vault.capNow(), 200e6);
+    }
+
+    function test_verify_resetsClockNotTier() public {
+        vm.warp(block.timestamp + 2 days);
+        vm.prank(backend);
+        vault.verify();
+        assertEq(vault.lastVerified(), block.timestamp);
+        assertEq(vault.capNow(), 2_000e6);
+    }
 }
