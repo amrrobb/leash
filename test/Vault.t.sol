@@ -154,4 +154,80 @@ contract VaultTest is Test {
         vault.ship(app, "s1", t, a);
         _ship("s2");
     }
+
+    function test_limitAt_curve() public view {
+        uint256 b = 2_000e6;
+        assertEq(vault.limitAt(b, 0), 2_000e6);
+        assertEq(vault.limitAt(b, 12 hours), 1_500e6);
+        assertEq(vault.limitAt(b, 24 hours), 1_000e6);
+        assertEq(vault.limitAt(b, 36 hours), 750e6);
+        assertEq(vault.limitAt(b, 48 hours), 500e6);
+        assertEq(vault.limitAt(b, 72 hours - 1), 250_002_894); // ~b/8 just before the cutoff, then a cliff to 0
+        assertEq(vault.limitAt(b, 72 hours), 0);
+        assertEq(vault.limitAt(b, type(uint256).max), 0);
+    }
+
+    function test_capNow_byTier() public {
+        assertEq(vault.capNow(), 2_000e6);
+        ens.grantRoles(vault.ROLE_DOCUMENT(), agent);
+        assertEq(vault.capNow(), 7_500e6);
+        ens.grantRoles(vault.ROLE_ORB(), agent);
+        assertEq(vault.capNow(), 15_000e6);
+    }
+
+    function test_capNow_ownerCapOnlyLowers() public {
+        vm.prank(owner);
+        vault.setCap(500e6);
+        assertEq(vault.capNow(), 500e6);
+        vm.prank(owner);
+        vault.setCap(0);
+        assertEq(vault.capNow(), 0);
+    }
+
+    function test_capNow_zeroUntilFirstVerify() public {
+        Vault fresh = new Vault(owner, agent, backend, IAqua(address(aqua)), IEAC(address(ens)), "agent", 1);
+        vm.prank(owner);
+        fresh.setCap(type(uint256).max);
+        assertEq(fresh.capNow(), 0);
+    }
+
+    /// Demo clock: speed 14_400 means 1 real second counts as 4 hours; 18s reaches the 72h cutoff.
+    function test_capNow_demoSpeed() public {
+        Vault demo = new Vault(owner, agent, backend, IAqua(address(aqua)), IEAC(address(ens)), "agent", 14_400);
+        vm.prank(owner);
+        demo.setCap(type(uint256).max);
+        vm.prank(backend);
+        demo.verify();
+        vm.warp(block.timestamp + 6);
+        assertEq(demo.capNow(), 1_000e6);
+        vm.warp(block.timestamp + 12);
+        assertEq(demo.capNow(), 0);
+    }
+
+    function test_reverify_restoresCap() public {
+        vm.warp(block.timestamp + 5 days);
+        assertEq(vault.capNow(), 0);
+        vm.prank(backend);
+        vault.verify();
+        assertEq(vault.capNow(), 2_000e6);
+        _ship("s1");
+    }
+
+    function test_verify_onlyBackend() public {
+        vm.prank(agent);
+        vm.expectRevert(Vault.NotBackend.selector);
+        vault.verify();
+    }
+
+    function test_setCap_onlyOwner() public {
+        vm.prank(agent);
+        vm.expectRevert(Vault.NotOwner.selector);
+        vault.setCap(1);
+    }
+
+    function test_withdraw_byOwner() public {
+        vm.prank(owner);
+        vault.withdraw(IERC20(address(usdc)), 1_000e6);
+        assertEq(usdc.balanceOf(owner), 1_000e6);
+    }
 }
