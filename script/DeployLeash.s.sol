@@ -12,7 +12,7 @@ import { SepoliaENS } from "../test/fork/SepoliaENS.sol";
 
 /// Deploys Alice's ENSv2 UserRegistry, registers `agent` to her, grants the mandate to the agent and
 /// tier-admin to the backend, then deploys Aqua and the Vault.
-/// env: ALICE_KEY, AGENT, BACKEND, [SPEED=1440], [AQUA] (reuse an existing Aqua), [USDC], [SALT]
+/// env: ALICE_KEY, AGENT, BACKEND, [SPEED=1440], [AQUA] (reuse an existing Aqua), [USDC], [SALT], [OUT] (write addresses as JSON)
 contract DeployLeash is Script {
     uint256 constant ROLE_REGISTRAR = 1 << 0;
     uint256 constant ROLE_RENEW = 1 << 16;
@@ -52,6 +52,23 @@ contract DeployLeash is Script {
         Vault vault = new Vault(alice, agent, backend, IAqua(aqua), IEAC(address(reg)), usdc, "agent", speed);
 
         vm.stopBroadcast();
+
+        string memory out = vm.envOr("OUT", string(""));
+        if (bytes(out).length > 0) {
+            string memory j = "deployment";
+            vm.serializeUint(j, "chainId", block.chainid);
+            vm.serializeUint(j, "deployBlock", block.number);
+            vm.serializeString(j, "agentLabel", "agent");
+            vm.serializeAddress(j, "alice", alice);
+            vm.serializeAddress(j, "agent", agent);
+            vm.serializeAddress(j, "backend", backend);
+            vm.serializeAddress(j, "userRegistry", address(reg));
+            vm.serializeAddress(j, "aqua", aqua);
+            vm.serializeAddress(j, "usdc", usdc);
+            vm.serializeAddress(j, "hype", hype);
+            vm.serializeUint(j, "speed", speed);
+            vm.writeJson(vm.serializeAddress(j, "vault", address(vault)), out);
+        }
 
         console.log("USER_REGISTRY", address(reg));
         console.log("AQUA", aqua);
