@@ -69,6 +69,7 @@ export function dashboardView(s, now) {
 
 export const TAGS = {
   you: ["Verified", "ok"],
+  owner: ["Owner", "ok"],
   full: ["Filled", "ok"],
   trim: ["Trimmed", "trim"],
   blocked: ["Paused", "pause"],
@@ -117,7 +118,7 @@ if (typeof document !== "undefined") {
     $("c-note").hidden = !v.cNote;
     $("c-note").textContent = v.cNote;
     $("withdraw").hidden = v.tone !== "pause";
-    $("revoke").hidden = v.revoked;
+    $("revoke").hidden = v.tone === "pause"; // close-only offers verify and withdraw, as designed
     document.body.dataset.state = v.tone === "pause" ? "C" : v.tone === "trim" ? "B-trim" : "B";
   }
 
@@ -169,7 +170,7 @@ if (typeof document !== "undefined") {
   async function ownerAction(button, path, body) {
     button.disabled = true;
     try {
-      await api(path, body);
+      await api(path, body ?? {});
       await poll();
     } catch (err) {
       $("dash-err").hidden = false;

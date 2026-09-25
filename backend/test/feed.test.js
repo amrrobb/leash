@@ -9,7 +9,7 @@ const log = (eventName, blockNumber, args = {}, logIndex = 0) => ({ eventName, b
 test("feed is newest first and labels each event", () => {
   const logs = [log("Verified", 10n), log("CapSet", 11n, { cap: 2_000_000_000n }), log("Shipped", 12n), log("Docked", 13n)];
   const feed = toFeed(logs, { usdc: USDC, blockTimes: new Map([[10n, 100n], [11n, 112n], [12n, 124n], [13n, 136n]]) });
-  assert.deepEqual(feed.map((e) => e.kind), ["closed", "full", "you", "you"]);
+  assert.deepEqual(feed.map((e) => e.kind), ["closed", "full", "owner", "you"]);
   assert.equal(feed[2].detail, "Authority up to 2,000 USDC");
   assert.equal(feed[0].at, 136);
 });

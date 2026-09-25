@@ -35,7 +35,7 @@ export function toFeed(logs, { usdc, blockTimes }) {
         out.push({ ...base, kind: "you", title: "You verified with World", detail: "Authority clock reset" });
         break;
       case "CapSet":
-        out.push({ ...base, kind: "you", title: "You set the mandate", detail: `Authority up to ${usd(a.cap).toLocaleString("en-US")} USDC` });
+        out.push({ ...base, kind: "owner", title: "You set the mandate", detail: `Authority up to ${usd(a.cap).toLocaleString("en-US")} USDC` });
         break;
       case "Shipped":
         out.push({ ...base, kind: "full", title: "Agent opened a range", detail: "Shipped to 1inch Aqua from your vault" });
@@ -44,7 +44,7 @@ export function toFeed(logs, { usdc, blockTimes }) {
         out.push({ ...base, kind: "closed", title: "Agent closed the position", detail: "Docked · funds never left your vault" });
         break;
       case "Withdrawn":
-        out.push({ ...base, kind: "closed", title: "You withdrew", detail: "Back to your wallet" });
+        out.push({ ...base, kind: "owner", title: "You withdrew", detail: "Back to your wallet" });
         break;
       case "Swapped": {
         const usdcLeg = a.tokenIn.toLowerCase() === usdc.toLowerCase() ? a.amountIn : a.amountOut;
