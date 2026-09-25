@@ -3,7 +3,7 @@ src            = "src"
 test           = "test"
 script         = "script"
 libs           = ["lib"]
-fs_permissions = [{ access = "write", path = "./e2e/.tmp" }]
+fs_permissions = [{ access = "read-write", path = "./e2e/.tmp" }, { access = "read", path = "./deployments" }]
 solc_version   = "0.8.30"
 optimizer      = true
 optimizer_runs = 700

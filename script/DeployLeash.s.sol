@@ -12,7 +12,7 @@ import { SepoliaENS } from "../test/fork/SepoliaENS.sol";
 
 /// Deploys Alice's ENSv2 UserRegistry, registers `agent` to her, grants the mandate to the agent and
 /// tier-admin to the backend, then deploys Aqua and the Vault.
-/// env: ALICE_KEY, AGENT, BACKEND, [SPEED=1440], [AQUA] (reuse an existing Aqua), [USDC], [SALT], [OUT] (write addresses as JSON)
+/// env: ALICE_KEY, AGENT, BACKEND, [SPEED=1440], [AQUA] (reuse an existing Aqua), [USDC], [ROUTER], [SALT], [OUT] (write addresses as JSON)
 contract DeployLeash is Script {
     uint256 constant ROLE_REGISTRAR = 1 << 0;
     uint256 constant ROLE_RENEW = 1 << 16;
@@ -49,6 +49,9 @@ contract DeployLeash is Script {
             usdc = address(new DemoToken("Leash Demo USD", "USDC", 6));
             hype = address(new DemoToken("Leash Demo HYPE", "HYPE", 18));
         }
+        // The router is deployed by script/deploy.sh with `forge create`: creating it inside a forge
+        // script breaks forge's constructor-argument decoding for this via-IR contract.
+        address router = vm.envOr("ROUTER", address(0));
         Vault vault = new Vault(alice, agent, backend, IAqua(aqua), IEAC(address(reg)), usdc, "agent", speed);
 
         vm.stopBroadcast();
@@ -64,6 +67,7 @@ contract DeployLeash is Script {
             vm.serializeAddress(j, "backend", backend);
             vm.serializeAddress(j, "userRegistry", address(reg));
             vm.serializeAddress(j, "aqua", aqua);
+            vm.serializeAddress(j, "router", router);
             vm.serializeAddress(j, "usdc", usdc);
             vm.serializeAddress(j, "hype", hype);
             vm.serializeUint(j, "speed", speed);
@@ -72,6 +76,7 @@ contract DeployLeash is Script {
 
         console.log("USER_REGISTRY", address(reg));
         console.log("AQUA", aqua);
+        console.log("ROUTER", router);
         console.log("USDC", usdc);
         console.log("HYPE", hype);
         console.log("VAULT", address(vault));
