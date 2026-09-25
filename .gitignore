@@ -7,3 +7,4 @@ broadcast/
 lib/swap-vm/node_modules/
 backend/leash.db*
 backend/node_modules/
+test-results/
