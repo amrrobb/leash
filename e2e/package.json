@@ -1,0 +1,12 @@
+{
+  "name": "leash-e2e",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.63.0",
+    "viem": "^2.56.9"
+  }
+}
