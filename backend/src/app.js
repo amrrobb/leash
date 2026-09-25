@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 import { extname, join, normalize } from "node:path";
 import { issueRpContext, handleProof } from "./flow.js";
 
-const TYPES = { ".html": "text/html; charset=utf-8", ".js": "text/javascript", ".css": "text/css", ".svg": "image/svg+xml", ".json": "application/json" };
+const TYPES = { ".html": "text/html; charset=utf-8", ".js": "text/javascript", ".css": "text/css", ".svg": "image/svg+xml", ".json": "application/json", ".wasm": "application/wasm" };
 
 const json = (res, status, body) => {
   res.writeHead(status, { "Content-Type": "application/json" });
@@ -42,12 +42,18 @@ export function createApp(deps) {
     routes["POST /api/demo/set-cap"] = async (body) => ({ tx: await demo.setCap(BigInt(body.cap)) });
     routes["POST /api/demo/revoke"] = async () => ({ tx: await demo.revokeMandate() });
     routes["POST /api/demo/grant-mandate"] = async () => ({ tx: await demo.grantMandate() });
+    routes["POST /api/demo/withdraw"] = async () => ({ tx: await demo.withdrawAll() });
   }
 
   async function serveStatic(req, res) {
-    const path = normalize(decodeURIComponent(new URL(req.url, "http://x").pathname)).replace(/^(\.\.[/\\])+/, "");
-    const file = join(staticDir, path === "/" ? "index.html" : path);
-    if (!file.startsWith(staticDir)) return json(res, 403, { error: "forbidden" });
+    let path = normalize(decodeURIComponent(new URL(req.url, "http://x").pathname)).replace(/^(\.\.[/\\])+/, "");
+    let dir = staticDir;
+    if (deps.vendorDir && path.startsWith("/vendor/")) {
+      dir = deps.vendorDir;
+      path = path.slice("/vendor".length);
+    }
+    const file = join(dir, path === "/" ? "index.html" : path);
+    if (!file.startsWith(dir)) return json(res, 403, { error: "forbidden" });
     try {
       const data = await readFile(file);
       res.writeHead(200, { "Content-Type": TYPES[extname(file)] ?? "application/octet-stream" });

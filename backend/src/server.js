@@ -10,8 +10,9 @@ const store = openStore(config.dbPath);
 const chain = createChain(config);
 const demo = process.env.DEMO_OWNER_KEY ? createDemoOwner({ ...config, ownerKey: process.env.DEMO_OWNER_KEY }) : null;
 const staticDir = fileURLToPath(new URL("../../frontend", import.meta.url));
+const vendorDir = fileURLToPath(new URL("../node_modules/@worldcoin/idkit-core/dist", import.meta.url));
 
-createApp({ config, store, chain, demo, staticDir }).listen(config.port, () => {
+createApp({ config, store, chain, demo, staticDir, vendorDir }).listen(config.port, () => {
   console.log(`leash backend on http://localhost:${config.port}  vault ${config.deployments.vault}`);
   if (demo) console.log("demo owner signer enabled (stands in for Alice's wallet)");
   if (!config.world.appId) console.log("World ID not configured: /api/rp-context and /api/proof will return 503");
