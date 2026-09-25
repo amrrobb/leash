@@ -199,17 +199,43 @@ contract VaultTest is Test {
         assertEq(fresh.capNow(), 0);
     }
 
-    /// Demo clock: speed 14_400 means 1 real second counts as 4 hours; 18s reaches the 72h cutoff.
-    function test_capNow_demoSpeed() public {
-        Vault demo = _deploy(14_400);
+    /// Demo clock on real 12s Sepolia blocks: speed 1_440 makes one block = 4.8h of decay.
+    function test_capNow_demoSpeed_on12sBlocks() public {
+        Vault demo = _deploy(1_440);
+        vm.startPrank(owner);
+        demo.setCap(type(uint256).max);
+        vm.stopPrank();
+        vm.prank(backend);
+        demo.verify();
+
+        _blocks(1);
+        assertEq(demo.capNow(), 1_800e6); // 4.8h
+        _blocks(4);
+        assertEq(demo.capNow(), 1_000e6); // 24h, one minute in
+        _blocks(9);
+        assertEq(demo.capNow(), 300e6); // 67.2h
+        _blocks(1);
+        assertEq(demo.capNow(), 0); // 72h, three minutes in
+    }
+
+    /// The agent still has runway to open a position well after verification.
+    function test_demoSpeed_agentCanShipTenBlocksAfterVerify() public {
+        Vault demo = _deploy(1_440);
+        usdc.mint(address(demo), 1_000e6);
+        hype.mint(address(demo), 100e18);
         vm.prank(owner);
         demo.setCap(type(uint256).max);
         vm.prank(backend);
         demo.verify();
-        vm.warp(block.timestamp + 6);
-        assertEq(demo.capNow(), 1_000e6);
-        vm.warp(block.timestamp + 12);
-        assertEq(demo.capNow(), 0);
+        _blocks(10);
+        (address[] memory t, uint256[] memory a) = _tokens();
+        vm.prank(agent);
+        demo.ship(app, "late", t, a);
+    }
+
+    function _blocks(uint256 n) internal {
+        vm.roll(block.number + n);
+        vm.warp(block.timestamp + 12 * n);
     }
 
     function test_reverify_restoresCap() public {
