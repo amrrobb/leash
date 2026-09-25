@@ -16,6 +16,11 @@ contract Vault {
     uint256 public constant PERIOD = 1 days;
     uint256 public constant CUTOFF = 3 days;
 
+    /// @dev Caps in USDC units (6 decimals), by World credential tier.
+    uint256 public constant CAP_ORB = 15_000e6;
+    uint256 public constant CAP_DOCUMENT = 7_500e6;
+    uint256 public constant CAP_SELFIE = 2_000e6;
+
     address public immutable owner;
     address public immutable agent;
     address public immutable backend;
@@ -26,8 +31,11 @@ contract Vault {
 
     string public agentLabel;
     uint64 public lastVerified;
+    /// @notice Owner-chosen ceiling; the effective base is min(ownerCap, tier cap). Zero = no mandate yet.
+    uint256 public ownerCap;
 
     event Verified(uint64 at);
+    event CapSet(uint256 cap);
 
     error NotOwner();
     error NotBackend();
@@ -57,6 +65,27 @@ contract Vault {
     function verify() external onlyBackend {
         lastVerified = uint64(block.timestamp);
         emit Verified(lastVerified);
+    }
+
+    function setCap(uint256 cap) external onlyOwner {
+        ownerCap = cap;
+        emit CapSet(cap);
+    }
+
+    /// @notice Highest tier the agent currently holds on its ENS name, capped by the owner.
+    function baseCap() public view returns (uint256) {
+        uint256 id = ens.findTokenId(agentLabel);
+        uint256 tier;
+        if (ens.hasRoles(id, ROLE_ORB, agent)) tier = CAP_ORB;
+        else if (ens.hasRoles(id, ROLE_DOCUMENT, agent)) tier = CAP_DOCUMENT;
+        else if (ens.hasRoles(id, ROLE_SELFIE, agent)) tier = CAP_SELFIE;
+        return tier < ownerCap ? tier : ownerCap;
+    }
+
+    /// @notice What the mandate still allows right now. Zero if never verified.
+    function capNow() public view returns (uint256) {
+        if (lastVerified == 0) return 0;
+        return limitAt(baseCap(), (block.timestamp - lastVerified) * speed);
     }
 
     /// @notice Halves every PERIOD, interpolates linearly inside a period, zero from CUTOFF on.
