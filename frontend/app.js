@@ -162,11 +162,16 @@ if (typeof document !== "undefined") {
       const state = await api("/api/state");
       snap = { state, fetchedAt: Date.now() };
       render();
-      renderFeed(await api("/api/feed"));
       $("dash-err").hidden = true;
     } catch (err) {
       $("dash-err").hidden = false;
       $("dash-err").textContent = `Could not read the chain: ${err.message}`;
+      return;
+    }
+    try {
+      renderFeed(await api("/api/feed"));
+    } catch {
+      // A failed event read must not hide a healthy dashboard; the next poll retries.
     }
   }
 
