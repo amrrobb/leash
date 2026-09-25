@@ -18,8 +18,22 @@ test("a swap reports its USDC leg whichever side it is on", () => {
   const usdcIn = log("Swapped", 5n, { tokenIn: USDC, tokenOut: HYPE, amountIn: 2_000_000_000n, amountOut: 1n });
   const usdcOut = log("Swapped", 6n, { tokenIn: HYPE, tokenOut: USDC, amountIn: 1n, amountOut: 1_500_000_000n });
   const feed = toFeed([usdcIn, usdcOut], { usdc: USDC, blockTimes: new Map() });
-  assert.equal(feed[0].detail, "1,500 USDC filled");
-  assert.equal(feed[1].detail, "2,000 USDC filled");
+  assert.equal(feed[0].detail, "1,500 USDC filled in full");
+  assert.equal(feed[1].detail, "2,000 USDC filled in full");
+});
+
+test("a trimmed trade shows what was asked and what the mandate allowed", () => {
+  const swap = log("Swapped", 8n, { tokenIn: USDC, tokenOut: HYPE, amountIn: 1_966_666_667n, amountOut: 1n });
+  const feed = toFeed([swap], { usdc: USDC, blockTimes: new Map(), asks: new Map([["0x8", 10_000_000_000n]]) });
+  assert.equal(feed[0].kind, "trim");
+  assert.equal(feed[0].detail, "Asked 10,000 · allowed 1,967 USDC");
+});
+
+test("an untrimmed trade is filled in full", () => {
+  const swap = log("Swapped", 9n, { tokenIn: USDC, tokenOut: HYPE, amountIn: 500_000_000n, amountOut: 1n });
+  const feed = toFeed([swap], { usdc: USDC, blockTimes: new Map(), asks: new Map([["0x9", 500_000_000n]]) });
+  assert.equal(feed[0].kind, "full");
+  assert.equal(feed[0].detail, "500 USDC filled in full");
 });
 
 test("same-block events keep log order", () => {

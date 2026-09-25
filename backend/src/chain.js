@@ -1,4 +1,4 @@
-import { createPublicClient, createWalletClient, http, keccak256, toBytes, parseAbi } from "viem";
+import { createPublicClient, createWalletClient, decodeFunctionData, http, keccak256, toBytes, parseAbi } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { sepolia } from "viem/chains";
 
@@ -19,11 +19,12 @@ export const vaultAbi = parseAbi([
 ]);
 
 export const routerAbi = parseAbi([
+  "function swap((address maker, uint256 traits, bytes data) order, uint256 amount, bytes takerTraitsAndData) payable returns (uint256, uint256, bytes32)",
   "event Swapped(bytes32 orderHash, address maker, address taker, address tokenIn, address tokenOut, uint256 amountIn, uint256 amountOut)",
 ]);
 
 /** Turns raw Vault/router logs into feed entries, newest first. Pure, so it is unit-tested. */
-export function toFeed(logs, { usdc, blockTimes }) {
+export function toFeed(logs, { usdc, blockTimes, asks = new Map() }) {
   const usd = (v) => Number(v) / 1e6;
   const out = [];
   for (const log of logs) {
@@ -47,8 +48,15 @@ export function toFeed(logs, { usdc, blockTimes }) {
         out.push({ ...base, kind: "owner", title: "You withdrew", detail: "Back to your wallet" });
         break;
       case "Swapped": {
-        const usdcLeg = a.tokenIn.toLowerCase() === usdc.toLowerCase() ? a.amountIn : a.amountOut;
-        out.push({ ...base, kind: "full", title: "Market trade on HYPE/USDC", detail: `${usd(usdcLeg).toLocaleString("en-US")} USDC filled` });
+        const usdcIn = a.tokenIn.toLowerCase() === usdc.toLowerCase();
+        const usdcLeg = usdcIn ? a.amountIn : a.amountOut;
+        const ask = usdcIn ? asks.get(log.transactionHash) : undefined;
+        const n = (v) => Math.round(usd(v)).toLocaleString("en-US");
+        if (ask !== undefined && ask > usdcLeg) {
+          out.push({ ...base, kind: "trim", title: "Market trade on HYPE/USDC", detail: `Asked ${n(ask)} · allowed ${n(usdcLeg)} USDC` });
+        } else {
+          out.push({ ...base, kind: "full", title: "Market trade on HYPE/USDC", detail: `${n(usdcLeg)} USDC filled in full` });
+        }
         break;
       }
     }
@@ -119,7 +127,20 @@ export function createChain({ rpcUrl, backendKey, deployments }) {
       const logs = [...vaultLogs, ...mine];
       const blockTimes = new Map();
       await Promise.all([...new Set(logs.map((l) => l.blockNumber))].map(async (n) => blockTimes.set(n, (await publicClient.getBlock({ blockNumber: n })).timestamp)));
-      return toFeed(logs, { usdc: deployments.usdc, blockTimes }).slice(0, limit);
+      // The ask is in the swap calldata (exact-in amount). Only decodable when the taker called the router directly.
+      const asks = new Map();
+      await Promise.all(
+        mine.map(async (l) => {
+          try {
+            const tx = await publicClient.getTransaction({ hash: l.transactionHash });
+            const { functionName, args } = decodeFunctionData({ abi: routerAbi, data: tx.input });
+            if (functionName === "swap") asks.set(l.transactionHash, args[1]);
+          } catch {
+            // called through a contract: no ask to show
+          }
+        }),
+      );
+      return toFeed(logs, { usdc: deployments.usdc, blockTimes, asks }).slice(0, limit);
     },
     grantTier(bit) {
       return send({ address: registry, abi: registryAbi, functionName: "grantRoles", args: [id, bit, deployments.agent] });
