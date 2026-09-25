@@ -12,7 +12,9 @@ import { SepoliaENS } from "../test/fork/SepoliaENS.sol";
 
 /// Deploys Alice's ENSv2 UserRegistry, registers `agent` to her, grants the mandate to the agent and
 /// tier-admin to the backend, then deploys Aqua and the Vault.
-/// env: ALICE_KEY, AGENT, BACKEND, [SPEED=1440], [AQUA] (reuse an existing Aqua), [USDC], [ROUTER], [SALT], [OUT] (write addresses as JSON)
+/// env: ALICE_KEY, AGENT, BACKEND, [SPEED=1440], [SALT], [OUT] (write addresses as JSON)
+///      Reuse instead of deploying: [USER_REGISTRY] (already set up: agent name, MANDATE, backend tier-admin),
+///      [AQUA], [USDC] + [HYPE], [ROUTER]. A redeploy keeps leash.eth pointing at the registry the Vault reads.
 contract DeployLeash is Script {
     uint256 constant ROLE_REGISTRAR = 1 << 0;
     uint256 constant ROLE_RENEW = 1 << 16;
@@ -29,22 +31,24 @@ contract DeployLeash is Script {
 
         vm.startBroadcast(aliceKey);
 
-        Grant[] memory grants = new Grant[](1);
-        grants[0] = Grant(alice, ROLE_REGISTRAR | ROLE_RENEW | ((ROLE_REGISTRAR | ROLE_RENEW | ROLE_MANDATE | TIERS) << 128));
-        IUserRegistry reg = IUserRegistry(
-            IVerifiableFactory(SepoliaENS.VERIFIABLE_FACTORY).deployProxy(
-                SepoliaENS.USER_REGISTRY_IMPL, salt, abi.encodeCall(IUserRegistry.initialize, (grants))
-            )
-        );
-        uint256 labelId = uint256(keccak256("agent"));
-        reg.register("agent", alice, address(0), address(0), 0, uint64(block.timestamp + 365 days));
-        reg.grantRoles(labelId, ROLE_MANDATE, agent);
-        reg.grantRootRoles(TIERS << 128, backend);
-
+        IUserRegistry reg = IUserRegistry(vm.envOr("USER_REGISTRY", address(0)));
+        if (address(reg) == address(0)) {
+            Grant[] memory grants = new Grant[](1);
+            grants[0] = Grant(alice, ROLE_REGISTRAR | ROLE_RENEW | ((ROLE_REGISTRAR | ROLE_RENEW | ROLE_MANDATE | TIERS) << 128));
+            reg = IUserRegistry(
+                IVerifiableFactory(SepoliaENS.VERIFIABLE_FACTORY).deployProxy(
+                    SepoliaENS.USER_REGISTRY_IMPL, salt, abi.encodeCall(IUserRegistry.initialize, (grants))
+                )
+            );
+            uint256 labelId = uint256(keccak256("agent"));
+            reg.register("agent", alice, address(0), address(0), 0, uint64(block.timestamp + 365 days));
+            reg.grantRoles(labelId, ROLE_MANDATE, agent);
+            reg.grantRootRoles(TIERS << 128, backend);
+        }
         address aqua = vm.envOr("AQUA", address(0));
         if (aqua == address(0)) aqua = address(new Aqua());
         address usdc = vm.envOr("USDC", address(0));
-        address hype;
+        address hype = vm.envOr("HYPE", address(0));
         if (usdc == address(0)) {
             usdc = address(new DemoToken("Leash Demo USD", "USDC", 6));
             hype = address(new DemoToken("Leash Demo HYPE", "HYPE", 18));
