@@ -47,6 +47,7 @@ contract Vault {
     mapping(bytes32 strategyHash => Position) internal _positions;
 
     event Verified(uint64 at);
+    event Withdrawn(address indexed token, uint256 amount);
     event Docked(bytes32 indexed strategyHash);
     event Shipped(bytes32 indexed strategyHash, address indexed app, address[] tokens, uint256[] amounts);
     event CapSet(uint256 cap);
@@ -116,6 +117,11 @@ contract Vault {
         delete _positions[strategyHash];
         aqua.dock(p.app, strategyHash, p.tokens);
         emit Docked(strategyHash);
+    }
+
+    function withdraw(IERC20 token, uint256 amount) external onlyOwner {
+        token.safeTransfer(owner, amount);
+        emit Withdrawn(address(token), amount);
     }
 
     /// @notice Highest tier the agent currently holds on its ENS name, capped by the owner.
