@@ -1,0 +1,16 @@
+{
+  "name": "leash-backend",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.13"
+  },
+  "scripts": {
+    "start": "node --env-file-if-exists=../.env src/server.js",
+    "test": "node --test \"test/**/*.test.js\""
+  },
+  "dependencies": {
+    "@worldcoin/idkit-core": "^4.3.0",
+    "viem": "^2.56.9"
+  }
+}
