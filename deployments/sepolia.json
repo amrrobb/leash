@@ -1,0 +1,16 @@
+{
+  "chainId": 11155111,
+  "deployedAt": "2026-09-26",
+  "ensName": "leash.eth",
+  "agentName": "agent.leash.eth",
+  "alice": "0x311159a207D9C9c9AE83C4F83ED18De346bfa4BA",
+  "agent": "0xFf2C23254af3FB788A9Ed558f0147ec6246e19d3",
+  "backend": "0xDc10f712B2e304b1933bC590573da12e7234C9bD",
+  "userRegistry": "0x00C79cAd7282dad808620CeeEca662EA1a3609bd",
+  "agentLabel": "agent",
+  "aqua": "0x7E13F754772777D098E4f8B22f82Dcdf3Ea55cC2",
+  "usdc": "0xa44B82a82383c4251a9BFed2532c78e56B97683F",
+  "hype": "0xa2840E991C00e6A99d2A94f44491139F19109375",
+  "vault": "0x333735bE6692069c9D30f25B5b4d74419Fb787d5",
+  "speed": 1440
+}
