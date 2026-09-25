@@ -1,0 +1,16 @@
+[profile.default]
+src            = "src"
+test           = "test"
+script         = "script"
+libs           = ["lib"]
+solc_version   = "0.8.30"
+optimizer      = true
+optimizer_runs = 700
+via_ir         = true
+remappings = [
+    "swap-vm/=lib/swap-vm/contracts/",
+    "forge-std/=lib/swap-vm/node_modules/forge-std/src/",
+    "@openzeppelin/contracts/=lib/swap-vm/node_modules/@openzeppelin/contracts/",
+    "@1inch/solidity-utils/=lib/swap-vm/node_modules/@1inch/solidity-utils/",
+    "@1inch/aqua/=lib/swap-vm/node_modules/@1inch/aqua/",
+]

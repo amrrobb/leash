@@ -1,0 +1,4 @@
+[submodule "lib/swap-vm"]
+	path = lib/swap-vm
+	url = https://github.com/1inch/swap-vm.git
+	branch = main
