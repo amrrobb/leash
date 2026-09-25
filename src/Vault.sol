@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.30;
 
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { IAqua } from "@1inch/aqua/src/interfaces/IAqua.sol";
 import { IEAC } from "./interfaces/IEAC.sol";
 
@@ -8,6 +10,8 @@ import { IEAC } from "./interfaces/IEAC.sol";
 /// @notice Holds the owner's tokens and is the Aqua maker. The agent may open positions only
 /// while its ENS mandate is alive and the decaying cap is above zero; closing is always allowed.
 contract Vault {
+    using SafeERC20 for IERC20;
+
     uint256 public constant ROLE_MANDATE = 1 << 40;
     uint256 public constant ROLE_ORB = 1 << 44;
     uint256 public constant ROLE_DOCUMENT = 1 << 48;
@@ -34,12 +38,23 @@ contract Vault {
     /// @notice Owner-chosen ceiling; the effective base is min(ownerCap, tier cap). Zero = no mandate yet.
     uint256 public ownerCap;
 
+    struct Position {
+        address app;
+        address[] tokens;
+    }
+
+    /// @notice What dock() needs back: Aqua requires the app and the full token list.
+    mapping(bytes32 strategyHash => Position) internal _positions;
+
     event Verified(uint64 at);
+    event Shipped(bytes32 indexed strategyHash, address indexed app, address[] tokens, uint256[] amounts);
     event CapSet(uint256 cap);
 
     error NotOwner();
     error NotBackend();
     error NotAgentOrOwner();
+    error NoMandate();
+    error MandateEmpty();
 
     modifier onlyOwner() {
         require(msg.sender == owner, NotOwner());
@@ -70,6 +85,25 @@ contract Vault {
     function setCap(uint256 cap) external onlyOwner {
         ownerCap = cap;
         emit CapSet(cap);
+    }
+
+    /// @notice Opens an Aqua position with this Vault as maker. Needs a live ENS mandate and cap > 0.
+    function ship(address app, bytes calldata strategy, address[] calldata tokens, uint256[] calldata amounts)
+        external
+        returns (bytes32 strategyHash)
+    {
+        require(ens.hasRoles(ens.findTokenId(agentLabel), ROLE_MANDATE, msg.sender), NoMandate());
+        require(capNow() > 0, MandateEmpty());
+
+        for (uint256 i = 0; i < tokens.length; i++) {
+            // Aqua.pull() transfers from the maker, so Aqua (not the app) needs the allowance.
+            if (IERC20(tokens[i]).allowance(address(this), address(aqua)) < amounts[i]) {
+                IERC20(tokens[i]).forceApprove(address(aqua), type(uint256).max);
+            }
+        }
+        strategyHash = aqua.ship(app, strategy, tokens, amounts);
+        _positions[strategyHash] = Position(app, tokens);
+        emit Shipped(strategyHash, app, tokens, amounts);
     }
 
     /// @notice Highest tier the agent currently holds on its ENS name, capped by the owner.
