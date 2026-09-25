@@ -134,4 +134,25 @@ contract MandateGateTest is GateBase {
         emit log_named_uint("swap without gate", without);
         emit log_named_uint("gate overhead (warm)", withGate - without);
     }
+
+    // ---- property: the USDC leg never exceeds what the mandate allows ----
+
+    function testFuzz_usdcLegNeverExceedsCap(uint256 amount, bool isExactIn, bool usdcIn, uint256 dt) public {
+        dt = bound(dt, 0, 3 days - 1);
+        vm.warp(block.timestamp + dt);
+        uint256 cap = vault.capNow();
+        // Keep requests inside what the pool can serve; the gate is what we are testing.
+        if (isExactIn) amount = bound(amount, 1, usdcIn ? 50_000e6 : 5_000e18);
+        else amount = bound(amount, 1, usdcIn ? 900e18 : 9_000e6);
+
+        try this.swapExternal(amount, isExactIn, usdcIn) returns (uint256 amountIn, uint256 amountOut) {
+            assertLe(usdcIn ? amountIn : amountOut, cap);
+        } catch {
+            // Dust trades may round to zero output and be rejected by SwapVM: acceptable.
+        }
+    }
+
+    function swapExternal(uint256 amount, bool isExactIn, bool usdcIn) external returns (uint256, uint256) {
+        return _swap(order, amount, isExactIn, usdcIn, true);
+    }
 }
