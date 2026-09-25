@@ -25,6 +25,9 @@ contract Vault {
     uint256 public immutable speed;
 
     string public agentLabel;
+    uint64 public lastVerified;
+
+    event Verified(uint64 at);
 
     error NotOwner();
     error NotBackend();
@@ -48,6 +51,12 @@ contract Vault {
         ens = ens_;
         agentLabel = agentLabel_;
         speed = speed_;
+    }
+
+    /// @notice Stamped by the backend after a server-side World ID verification.
+    function verify() external onlyBackend {
+        lastVerified = uint64(block.timestamp);
+        emit Verified(lastVerified);
     }
 
     /// @notice Halves every PERIOD, interpolates linearly inside a period, zero from CUTOFF on.
