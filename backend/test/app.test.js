@@ -4,7 +4,7 @@ import { mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { openStore } from "../src/store.js";
-import { createApp } from "../src/app.js";
+import { createApp, demoAllowed } from "../src/app.js";
 
 const dir = mkdtempSync(join(tmpdir(), "leash-app-"));
 const staticDir = join(dir, "public");
@@ -79,3 +79,13 @@ test("serves the frontend and blocks path traversal", async () => {
   const res = await fetch(`${base}/..%2Fsecret.txt`);
   assert.notEqual(await res.text(), "nope");
 });
+
+test("demo routes: loopback or token only", () => {
+  const req = (ip, headers = {}) => ({ socket: { remoteAddress: ip }, headers });
+  assert.equal(demoAllowed(req("127.0.0.1"), undefined), true);
+  assert.equal(demoAllowed(req("::1"), undefined), true);
+  assert.equal(demoAllowed(req("203.0.113.9"), undefined), false);
+  assert.equal(demoAllowed(req("203.0.113.9", { "x-demo-token": "t" }), "t"), true);
+  assert.equal(demoAllowed(req("203.0.113.9", { "x-demo-token": "" }), ""), false);
+});
+

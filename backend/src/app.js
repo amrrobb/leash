@@ -1,7 +1,7 @@
 import { createServer } from "node:http";
 import { readFile } from "node:fs/promises";
 import { extname, join, normalize } from "node:path";
-import { issueRpContext, handleProof } from "./flow.js";
+import { issueRpContext, handleProof, describeResult } from "./flow.js";
 
 const TYPES = { ".html": "text/html; charset=utf-8", ".js": "text/javascript", ".css": "text/css", ".svg": "image/svg+xml", ".json": "application/json", ".wasm": "application/wasm" };
 
@@ -23,7 +23,14 @@ async function readBody(req) {
   }
 }
 
-/** HTTP app. `deps`: { config, store, chain, demo?, fetchImpl?, staticDir } */
+/** Demo owner routes sign as Alice, so they answer only on loopback or with the DEMO_TOKEN header. */
+export function demoAllowed(req, token) {
+  const ip = req.socket?.remoteAddress ?? "";
+  const loopback = ip === "127.0.0.1" || ip === "::1" || ip === "::ffff:127.0.0.1";
+  return loopback || (Boolean(token) && req.headers["x-demo-token"] === token);
+}
+
+/** HTTP app. `deps`: { config, store, chain, demo?, demoToken?, fetchImpl?, staticDir, vendorDir? } */
 export function createApp(deps) {
   const { config, store, chain, demo, staticDir } = deps;
   const vault = config.deployments.vault;
@@ -70,12 +77,15 @@ export function createApp(deps) {
       if (req.method === "GET" && staticDir) return serveStatic(req, res);
       return json(res, 404, { error: "not found" });
     }
+    let body;
+    if (key.startsWith("POST /api/demo/") && !demoAllowed(req, deps.demoToken)) return json(res, 403, { error: "demo routes are local-only" });
     try {
-      const body = req.method === "POST" ? await readBody(req) : undefined;
+      body = req.method === "POST" ? await readBody(req) : undefined;
       json(res, 200, await route(body));
     } catch (err) {
       const status = err.status ?? 500;
       if (status >= 500) console.error(key, err);
+      else if (key === "POST /api/proof") console.warn(`proof rejected (${status}): ${err.message}`, JSON.stringify(describeResult(body)));
       json(res, status, { error: err.shortMessage ?? err.message });
     }
   });
