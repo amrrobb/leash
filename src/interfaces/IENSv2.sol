@@ -32,3 +32,42 @@ interface IUserRegistry is IEAC {
 interface IVerifiableFactory {
     function deployProxy(address implementation, uint256 salt, bytes calldata data) external returns (address);
 }
+
+/// @notice ENSv2 .eth registrar (commit-reveal, paid in a whitelisted ERC20).
+interface IETHRegistrar {
+    function MIN_COMMITMENT_AGE() external view returns (uint64);
+    function isAvailable(string calldata label) external view returns (bool);
+    function getRegisterPrice(string calldata label, uint64 duration, address paymentToken)
+        external
+        view
+        returns (uint256 base, uint256 premium);
+    function makeCommitment(
+        string calldata label,
+        address owner,
+        bytes32 secret,
+        address subregistry,
+        address resolver,
+        uint64 duration,
+        bytes32 referrer
+    ) external pure returns (bytes32);
+    function commit(bytes32 commitment) external;
+    function register(
+        string calldata label,
+        address owner,
+        bytes32 secret,
+        address subregistry,
+        address resolver,
+        uint64 duration,
+        address paymentToken,
+        bytes32 referrer
+    ) external returns (uint256 tokenId);
+}
+
+interface IRegistryRead {
+    function getSubregistry(string calldata label) external view returns (address);
+}
+
+interface IMintable {
+    function mint(address to, uint256 amount) external;
+    function approve(address spender, uint256 amount) external returns (bool);
+}
