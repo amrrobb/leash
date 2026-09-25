@@ -1,18 +1,19 @@
 import { test, expect } from "@playwright/test";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { rpc } from "../setup.js";
+import { rpc, agent } from "../setup.js";
 
 const shot = (name) => fileURLToPath(new URL(`../.tmp/shots/${name}.png`, import.meta.url));
 const fakeIDKit = readFileSync(fileURLToPath(new URL("../fake-idkit.js", import.meta.url)), "utf8");
 
-/** Chain time only moves when we move it. 1 real second = 0.4 demo hours on this Vault (speed 1440). */
-async function warp(seconds) {
-  await rpc("evm_increaseTime", [seconds]);
+const state = async (request) => (await request.get("/api/state")).json();
+
+/** Moves chain time to exactly `seconds` after the last verification, whatever happened before. */
+async function warpSinceVerify(request, seconds) {
+  const s = await state(request);
+  await rpc("evm_setNextBlockTimestamp", [Number(s.lastVerified) + seconds]);
   await rpc("evm_mine");
 }
-
-const state = async (request) => (await request.get("/api/state")).json();
 
 /** Chain time follows wall time on Anvil and every real second is 0.4 demo hours, so "just verified"
  * reads a little under the cap. Assert a range, never an exact figure. */
@@ -99,8 +100,20 @@ test.describe.serial("Leash journey on a Sepolia fork", () => {
     await page.screenshot({ path: shot("state-b") });
   });
 
+  test("Agent ships; a 10,000 USDC market trade is trimmed to the live cap", async () => {
+    agent("ship");
+    await expect(page.getByTestId("feed")).toContainText("Agent opened a range");
+    const out = agent("trade", { AMOUNT: "10000000000" });
+    const filled = Number(out.match(/filled \(USDC\) (\d+)/)[1]) / 1e6;
+    expect(filled).toBeGreaterThan(1_800);
+    expect(filled).toBeLessThanOrEqual(2_000);
+    const row = page.locator('[data-kind="trim"]').first();
+    await expect(row).toContainText("Asked 10,000 · allowed");
+    await expect(row).toContainText("Trimmed");
+  });
+
   test("Decay: 36 demo hours later the dashboard turns ochre and trims", async ({ request }) => {
-    await warp(90);
+    await warpSinceVerify(request, 90); // 90 s x 1440 = 36 demo hours -> 750 of 2,000
     await expect(page.getByTestId("status")).toHaveText("Trimming fills");
     const shown = Number((await page.getByTestId("authority").textContent()).replace(/,/g, ""));
     expect(shown).toBeLessThanOrEqual(750);
@@ -111,7 +124,7 @@ test.describe.serial("Leash journey on a Sepolia fork", () => {
   });
 
   test("State C: 72 demo hours without a human -> close-only, grey, not red", async ({ request }) => {
-    await warp(95);
+    await warpSinceVerify(request, 185);
     await expect(page.getByTestId("status")).toHaveText("Close-only");
     await expect(page.getByTestId("authority")).toHaveText("0");
     await expect(page.getByTestId("reaches-zero")).toHaveText("Reached");
@@ -123,6 +136,12 @@ test.describe.serial("Leash journey on a Sepolia fork", () => {
     const bg = await page.getByTestId("status").evaluate((el) => getComputedStyle(el).backgroundColor);
     expect(bg).toBe("rgb(236, 234, 227)");
     await page.screenshot({ path: shot("state-c") });
+  });
+
+  test("In C the market is refused but the agent can still close", async () => {
+    expect(() => agent("trade", { AMOUNT: "1000000000" })).toThrow(/MandateEmpty/);
+    agent("dock");
+    await expect(page.getByTestId("feed")).toContainText("Agent closed the position");
   });
 
   test("C -> B recovery: verifying again restores the cap on chain", async ({ request }) => {

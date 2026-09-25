@@ -50,15 +50,15 @@ export default async function globalSetup() {
   await waitFor(async () => (await rpc("eth_chainId")) === "0xaa36a7", "anvil");
 
   // Fresh keys every run, funded by Anvil only. None of them exist on real Sepolia.
-  const keys = { alice: generatePrivateKey(), agent: generatePrivateKey(), backend: generatePrivateKey() };
+  const keys = { alice: generatePrivateKey(), agent: generatePrivateKey(), backend: generatePrivateKey(), taker: generatePrivateKey() };
   const addr = Object.fromEntries(Object.entries(keys).map(([k, v]) => [k, privateKeyToAccount(v).address]));
   for (const a of Object.values(addr)) await rpc("anvil_setBalance", [a, "0x56BC75E2D63100000"]);
   writeFileSync(`${tmp}/keys.json`, JSON.stringify({ keys, addr }, null, 2));
 
-  execFileSync("forge", ["script", "script/DeployLeash.s.sol", "--rpc-url", ANVIL, "--broadcast", "--slow"], {
+  execFileSync("script/deploy.sh", [], {
     cwd: root,
     stdio: "ignore",
-    env: { ...process.env, ALICE_KEY: keys.alice, AGENT: addr.agent, BACKEND: addr.backend, SPEED: "1440", OUT: `${tmp}/deployment.json`, SALT: String(Date.now()) },
+    env: { ...process.env, RPC: ANVIL, ALICE_KEY: keys.alice, AGENT: addr.agent, BACKEND: addr.backend, SPEED: "1440", OUT: `${tmp}/deployment.json`, SALT: String(Date.now()) },
   });
 
   // World Developer Portal stub: accepts every proof unless its nullifier is "0xportal-reject".
@@ -101,3 +101,14 @@ export default async function globalSetup() {
     }
   };
 }
+
+/** Runs script/Agent.s.sol against the fork. Returns forge's stdout; throws if the script reverts. */
+export function agent(action, extra = {}) {
+  const { keys } = JSON.parse(readFileSync(`${tmp}/keys.json`, "utf8"));
+  return execFileSync("forge", ["script", "script/Agent.s.sol", "--rpc-url", ANVIL, "--broadcast", "--slow"], {
+    cwd: root,
+    encoding: "utf8",
+    env: { ...process.env, ACTION: action, DEPLOYMENT: `${tmp}/deployment.json`, SALT: "7", AGENT_KEY: keys.agent, TAKER_KEY: keys.taker, ...extra },
+  });
+}
+
