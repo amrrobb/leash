@@ -31,11 +31,13 @@ Written by us: **Vault.sol**, **MandateGate.sol** (library), **MandateAquaRouter
 
 ### Vault.sol (done, phase 1)
 - `owner`, `agent`, `backend`, `aqua`, `ens`, `capToken` (USDC), `speed` are immutable; `agentLabel` is stored.
-- `ship(app, strategy, tokens, amounts)`: requires `ens.hasRoles(ens.findTokenId(agentLabel), ROLE_MANDATE, msg.sender)` and `capNow() > 0`. Approves Aqua (Aqua pulls from the maker), calls `aqua.ship`, stores app + token list per strategy hash.
+- `labelId = uint256(keccak256(agentLabel))` is immutable. ENSv2 role reads accept any version of a label's id, so it never goes stale even though the token id regenerates on every grant/revoke. Every read is a single `ens.roles(labelId, agent)` (token roles only), which gives the mandate bit and the tier at once.
+- `ship(app, strategy, tokens, amounts)`: only the `agent`; requires the MANDATE bit and `capNow() > 0`. Approves Aqua (Aqua pulls from the maker), calls `aqua.ship`, stores app + token list per strategy hash.
 - `dock(strategyHash)`: agent or owner. Reads no ENS state, so closing works after revoke or decay.
 - `withdraw(token, amount)`: owner only. `setCap(cap)`: owner only. `verify()`: backend only, stamps `lastVerified`.
 - `baseCap()` = min(`ownerCap`, highest tier the agent holds: orb 15,000 · document 7,500 · selfie 2,000 USDC). `ownerCap == 0` means no mandate yet.
-- `capNow()` = `limitAt(baseCap(), (now - lastVerified) * speed)`, zero if never verified.
+- `capNow()` = `limitAt(baseCap(), (now - lastVerified) * speed)`; zero if the mandate is revoked, the name expired, or never verified.
+- Gas on real ENSv2 (fork): ship 256k · capNow 33.4k cold (the per-swap cost the gate adds).
 - `limitAt`: `base >> (elapsed / 24h)`, then linear interpolation inside the period, **zero from 72h**. Without the cutoff, plain halving takes ~31 days to reach zero.
 - `speed`: 1 in production, **1,440 on the demo Vault** (one 12s Sepolia block = 4.8h, zero in ~3 minutes).
 
@@ -67,9 +69,13 @@ Stock AquaSwapVMRouter on main @ feb1641: 21,981 B (limit 24,576). Run `forge bu
 ## 4. ENSv2 — verified facts
 
 - Real registry: `PermissionedRegistry`; `hasRoles(anyId, bitmap, account)`.
-- **Ownership pattern:** `agent.alice.eth` is registered to **Alice** with admin bits `(role << 128)`; then `grantRoles(tokenId, ROLE_MANDATE | ROLE_TIER_x, agent)`. If the name is given to the agent, Alice cannot revoke.
-- Admin bits for custom nybbles **must be passed at `register()`** — granting them afterwards fails (`EACCannotGrantRoles`).
-- **tokenId changes** after grant/revoke. Always `findTokenId(label)`. `hasRoles` still accepts old ids.
+- **Built pattern (proven on fork, `test/fork/ENSAuthority.t.sol`):** Alice deploys her own UserRegistry via VerifiableFactory with root grants `REGISTRAR | RENEW | (REGISTRAR | RENEW | MANDATE | ORB | DOCUMENT | SELFIE) << 128`. She registers `agent` to herself and grants MANDATE to the agent. She gives the backend `(ORB | DOCUMENT | SELFIE) << 128` at **root** via `grantRootRoles`.
+- **Why root:** `PermissionedRegistry._getSettableRoles` returns only regular bits on token resources, so admin bits on a token exist only if passed at `register()` and can never be delegated. Root roles are exempt, and `hasRoles` = root | token.
+- **Backend rule:** grant tiers on the **token** (`grantRoles(labelId, tier, agent)`), never with `grantRootRoles`. `roles()` excludes root, so a root-level tier reads as cap 0.
+- **Trust:** the backend can set or remove tiers and can also revoke Alice's own root tier-admin; it can never grant or revoke MANDATE. If the name is given to the agent, Alice cannot revoke.
+- `.eth` name: `leash.eth` (`alice` is taken) via ETHRegistrar commit → 60s → register, ~8 MockUSDC/yr, subregistry = Alice's UserRegistry. Proven on fork (`test/fork/EthName.t.sol`); **not yet registered on Sepolia.**
+- Do not use the ENSv2 MockUSDC as the cap token: its `nuke(address)` lets anyone burn any balance. `DeployLeash` deploys its own `DemoToken`s.
+- **tokenId changes** after grant/revoke (burn + mint). Use `findTokenId(label)` for ownership/transfer; role reads accept any id version, including `keccak256(label)`.
 - Expiry removes all roles automatically (`eacVersionId + 1`). No extra check needed.
 - Role bits: 40 mandate · 44 orb · 48 document · 52 selfie. No clash with RegistryRolesLib.
 - Gas: `hasRoles` ≈ 24.4k; overhead per swap ≈ 25.7k (129k → 155k).
