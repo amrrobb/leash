@@ -13,11 +13,16 @@ contract Vault {
     uint256 public constant ROLE_DOCUMENT = 1 << 48;
     uint256 public constant ROLE_SELFIE = 1 << 52;
 
+    uint256 public constant PERIOD = 1 days;
+    uint256 public constant CUTOFF = 3 days;
+
     address public immutable owner;
     address public immutable agent;
     address public immutable backend;
     IAqua public immutable aqua;
     IEAC public immutable ens;
+    /// @notice Demo clock multiplier on elapsed time: 1 in tests, 14_400 for "1s = 4h".
+    uint256 public immutable speed;
 
     string public agentLabel;
 
@@ -35,12 +40,20 @@ contract Vault {
         _;
     }
 
-    constructor(address owner_, address agent_, address backend_, IAqua aqua_, IEAC ens_, string memory agentLabel_) {
+    constructor(address owner_, address agent_, address backend_, IAqua aqua_, IEAC ens_, string memory agentLabel_, uint256 speed_) {
         owner = owner_;
         agent = agent_;
         backend = backend_;
         aqua = aqua_;
         ens = ens_;
         agentLabel = agentLabel_;
+        speed = speed_;
+    }
+
+    /// @notice Halves every PERIOD, interpolates linearly inside a period, zero from CUTOFF on.
+    function limitAt(uint256 base, uint256 elapsed) public pure returns (uint256) {
+        if (elapsed >= CUTOFF) return 0;
+        uint256 halved = base >> (elapsed / PERIOD);
+        return halved - halved * (elapsed % PERIOD) / (2 * PERIOD);
     }
 }
