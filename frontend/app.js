@@ -119,6 +119,9 @@ if (typeof document !== "undefined") {
     $("c-note").textContent = v.cNote;
     $("withdraw").hidden = v.tone !== "pause";
     $("revoke").hidden = v.tone === "pause"; // close-only offers verify and withdraw, as designed
+    // Verifying renews the clock and tier; it cannot undo Alice's own revoke. Only she can restore it.
+    $("verify-again").hidden = v.revoked;
+    $("restore").hidden = !v.revoked;
     document.body.dataset.state = v.tone === "pause" ? "C" : v.tone === "trim" ? "B-trim" : "B";
   }
 
@@ -327,6 +330,7 @@ if (typeof document !== "undefined") {
 
   $("revoke").addEventListener("click", (e) => ownerAction(e.currentTarget, "/api/demo/revoke"));
   $("withdraw").addEventListener("click", (e) => ownerAction(e.currentTarget, "/api/demo/withdraw"));
+  $("restore").addEventListener("click", (e) => ownerAction(e.currentTarget, "/api/demo/grant-mandate"));
 
   window.leash = { session, api, poll, render, ownerAction, startVerify, $, get snap() { return snap; } };
   poll();
