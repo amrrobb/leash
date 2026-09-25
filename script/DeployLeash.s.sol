@@ -5,13 +5,14 @@ import { Script, console } from "forge-std/Script.sol";
 import { Aqua } from "@1inch/aqua/src/Aqua.sol";
 import { IAqua } from "@1inch/aqua/src/interfaces/IAqua.sol";
 import { Vault } from "../src/Vault.sol";
+import { DemoToken } from "../src/DemoToken.sol";
 import { IEAC } from "../src/interfaces/IEAC.sol";
 import { IUserRegistry, IVerifiableFactory, Grant } from "../src/interfaces/IENSv2.sol";
 import { SepoliaENS } from "../test/fork/SepoliaENS.sol";
 
 /// Deploys Alice's ENSv2 UserRegistry, registers `agent` to her, grants the mandate to the agent and
 /// tier-admin to the backend, then deploys Aqua and the Vault.
-/// env: ALICE_KEY, AGENT, BACKEND, [SPEED=1440], [AQUA] (reuse an existing Aqua), [SALT]
+/// env: ALICE_KEY, AGENT, BACKEND, [SPEED=1440], [AQUA] (reuse an existing Aqua), [USDC], [SALT]
 contract DeployLeash is Script {
     uint256 constant ROLE_REGISTRAR = 1 << 0;
     uint256 constant ROLE_RENEW = 1 << 16;
@@ -42,12 +43,20 @@ contract DeployLeash is Script {
 
         address aqua = vm.envOr("AQUA", address(0));
         if (aqua == address(0)) aqua = address(new Aqua());
-        Vault vault = new Vault(alice, agent, backend, IAqua(aqua), IEAC(address(reg)), SepoliaENS.MOCK_USDC, "agent", speed);
+        address usdc = vm.envOr("USDC", address(0));
+        address hype;
+        if (usdc == address(0)) {
+            usdc = address(new DemoToken("Leash Demo USD", "USDC", 6));
+            hype = address(new DemoToken("Leash Demo HYPE", "HYPE", 18));
+        }
+        Vault vault = new Vault(alice, agent, backend, IAqua(aqua), IEAC(address(reg)), usdc, "agent", speed);
 
         vm.stopBroadcast();
 
         console.log("USER_REGISTRY", address(reg));
         console.log("AQUA", aqua);
+        console.log("USDC", usdc);
+        console.log("HYPE", hype);
         console.log("VAULT", address(vault));
         console.log("SPEED", speed);
     }
