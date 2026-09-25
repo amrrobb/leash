@@ -2,21 +2,13 @@
 pragma solidity 0.8.30;
 
 import { Test } from "forge-std/Test.sol";
-import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { Aqua } from "@1inch/aqua/src/Aqua.sol";
 import { IAqua } from "@1inch/aqua/src/interfaces/IAqua.sol";
 import { Vault } from "../src/Vault.sol";
 import { IEAC } from "../src/interfaces/IEAC.sol";
 import { MockEAC } from "./mocks/MockEAC.sol";
-
-contract TestToken is ERC20 {
-    constructor(string memory s) ERC20(s, s) { }
-
-    function mint(address to, uint256 amount) external {
-        _mint(to, amount);
-    }
-}
+import { TestToken } from "./mocks/TestToken.sol";
 
 contract VaultTest is Test {
     address owner = makeAddr("alice");
