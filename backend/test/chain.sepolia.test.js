@@ -18,3 +18,10 @@ test("reads the deployed Sepolia Vault in one block", { skip: !config.rpcUrl && 
   assert.equal((s.agentRoles & ROLE.MANDATE) !== 0n, true);
   assert.ok(s.blockNumber > 0n);
 });
+
+test("reads the Vault's real event feed on Sepolia", { skip: !config.rpcUrl && "SEPOLIA_RPC not set" }, async () => {
+  const chain = createChain({ ...config, deployments: { ...config.deployments, deployBlock: 11781150 } });
+  const feed = await chain.readFeed();
+  assert.ok(Array.isArray(feed));
+  for (const e of feed) assert.ok(e.title && e.kind && e.tx);
+});

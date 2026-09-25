@@ -32,6 +32,7 @@ export function createApp(deps) {
     "GET /api/health": async () => ({ ok: true }),
     "GET /api/deployment": async () => config.deployments,
     "GET /api/state": async () => chain.readState(),
+    "GET /api/feed": async () => chain.readFeed(),
     "POST /api/rp-context": async () => issueRpContext({ world: config.world, store }),
     "POST /api/proof": async (body) =>
       handleProof({ result: body, world: config.world, store, chain, vault, fetchImpl: deps.fetchImpl }),
