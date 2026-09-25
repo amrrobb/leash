@@ -30,7 +30,10 @@ contract Vault {
     address public immutable backend;
     IAqua public immutable aqua;
     IEAC public immutable ens;
-    /// @notice Demo clock multiplier on elapsed time: 1 in tests, 14_400 for "1s = 4h".
+    /// @notice Token the cap is denominated in (USDC). MandateGate trims only this leg of a trade.
+    address public immutable capToken;
+    /// @notice Demo clock multiplier on elapsed time: 1 in production, 1_440 on the demo Vault
+    /// (one 12s Sepolia block = 4.8h, cap reaches zero in ~3 min).
     uint256 public immutable speed;
 
     string public agentLabel;
@@ -69,12 +72,21 @@ contract Vault {
         _;
     }
 
-    constructor(address owner_, address agent_, address backend_, IAqua aqua_, IEAC ens_, string memory agentLabel_, uint256 speed_) {
+    constructor(
+        address owner_,
+        address agent_,
+        address backend_,
+        IAqua aqua_, IEAC ens_,
+        address capToken_,
+        string memory agentLabel_,
+        uint256 speed_
+    ) {
         owner = owner_;
         agent = agent_;
         backend = backend_;
         aqua = aqua_;
         ens = ens_;
+        capToken = capToken_;
         agentLabel = agentLabel_;
         speed = speed_;
     }

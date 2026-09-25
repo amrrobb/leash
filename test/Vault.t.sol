@@ -33,8 +33,8 @@ contract VaultTest is Test {
     function setUp() public {
         aqua = new Aqua();
         ens = new MockEAC("agent");
-        vault = new Vault(owner, agent, backend, IAqua(address(aqua)), IEAC(address(ens)), "agent", 1);
         usdc = new TestToken("USDC");
+        vault = _deploy(1);
         hype = new TestToken("HYPE");
         usdc.mint(address(vault), 10_000e6);
         hype.mint(address(vault), 1_000e18);
@@ -44,6 +44,10 @@ contract VaultTest is Test {
         vault.setCap(type(uint256).max);
         vm.prank(backend);
         vault.verify();
+    }
+
+    function _deploy(uint256 speed) internal returns (Vault) {
+        return new Vault(owner, agent, backend, IAqua(address(aqua)), IEAC(address(ens)), address(usdc), "agent", speed);
     }
 
     function _tokens() internal view returns (address[] memory t, uint256[] memory a) {
@@ -61,6 +65,10 @@ contract VaultTest is Test {
 
     function _bal(bytes32 h, address t) internal view returns (uint256 b) {
         (b,) = aqua.rawBalances(address(vault), app, h, t);
+    }
+
+    function test_capToken_isUsdc() public view {
+        assertEq(vault.capToken(), address(usdc));
     }
 
     function test_ship_withRole() public {
@@ -185,7 +193,7 @@ contract VaultTest is Test {
     }
 
     function test_capNow_zeroUntilFirstVerify() public {
-        Vault fresh = new Vault(owner, agent, backend, IAqua(address(aqua)), IEAC(address(ens)), "agent", 1);
+        Vault fresh = _deploy(1);
         vm.prank(owner);
         fresh.setCap(type(uint256).max);
         assertEq(fresh.capNow(), 0);
@@ -193,7 +201,7 @@ contract VaultTest is Test {
 
     /// Demo clock: speed 14_400 means 1 real second counts as 4 hours; 18s reaches the 72h cutoff.
     function test_capNow_demoSpeed() public {
-        Vault demo = new Vault(owner, agent, backend, IAqua(address(aqua)), IEAC(address(ens)), "agent", 14_400);
+        Vault demo = _deploy(14_400);
         vm.prank(owner);
         demo.setCap(type(uint256).max);
         vm.prank(backend);
