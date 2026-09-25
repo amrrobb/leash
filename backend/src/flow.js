@@ -17,6 +17,19 @@ export function issueRpContext({ world, store, sign = signRequest }) {
   };
 }
 
+/** Shape of a rejected result, without proofs or nullifiers: enough to see why a real World proof
+ * failed our checks (field names, versions, nonce format) the first time one arrives. */
+export function describeResult(result) {
+  return {
+    keys: Object.keys(result ?? {}).sort(),
+    protocol_version: result?.protocol_version,
+    action: result?.action,
+    nonce: typeof result?.nonce === "string" ? `${result.nonce.slice(0, 10)}… (${result.nonce.length} chars)` : typeof result?.nonce,
+    identifiers: (result?.responses ?? []).map((r) => r.identifier),
+    environment: result?.environment,
+  };
+}
+
 /** Verifies a completion result and, only if every check passes, grants the tier and stamps the Vault. */
 export async function handleProof({ result, world, store, chain, vault, fetchImpl = fetch }) {
   requireWorld(world);

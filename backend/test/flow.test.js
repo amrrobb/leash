@@ -4,7 +4,7 @@ import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { openStore } from "../src/store.js";
-import { issueRpContext, handleProof } from "../src/flow.js";
+import { issueRpContext, handleProof, describeResult } from "../src/flow.js";
 import { ROLE } from "../src/world.js";
 
 const world = {
@@ -114,3 +114,11 @@ test("unsupported credential sends no transaction", async () => {
 test("missing World config fails loudly with 503", () => {
   assert.throws(() => issueRpContext({ world: { ...world, rpId: undefined }, store }), (e) => e.status === 503 && /WORLD_RP_ID/.test(e.message));
 });
+
+test("rejection diagnostics show the shape, never the proof or nullifier", () => {
+  const d = describeResult({ protocol_version: "4.0", nonce: "0x1234567890abcdef", action: "leash-verify", responses: [{ identifier: "selfie", nullifier: "0xsecret", proof: ["0xp"] }] });
+  assert.deepEqual(d.identifiers, ["selfie"]);
+  assert.equal(d.nonce, "0x12345678… (18 chars)");
+  assert.doesNotMatch(JSON.stringify(d), /0xsecret|0xp/);
+});
+
