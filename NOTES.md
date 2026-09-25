@@ -3,7 +3,9 @@
 Log as you go: timestamp · sponsor · what you tried · what broke · how long it cost · what doc was missing.
 
 ## World
-- 
+- 2026-09-26 06:30 JST · verify host · IDKit 4.3.0's own README posts to `https://developer.worldcoin.org/api/v4/verify/{rp_id}`, not `developer.world.org` as our handoff said. Using the package's host (overridable via WORLD_VERIFY_URL).
+- 2026-09-26 06:30 JST · replay model · a v4 nullifier is fixed per (human, action), so "reject a reused nullifier" would block the same human re-verifying, which is Leash's whole renewal loop. Replay key is instead the rp_context `nonce` (IDKitResultV4.nonce), which our backend signs, stores and consumes once; the nullifier is bound to one Vault so one human cannot keep two agents alive. Neither the docs nor the handoff mention this tension.
+- 2026-09-26 06:30 JST · credential ids · from IDKit types: `proof_of_human` (issuer 1), `passport` (9303), `mnc` (9310), `selfie` (11). Mapped to orb / document / document / selfie. Still unconfirmed against a live staging proof.
 
 ## ENS
 - 2026-09-26 04:00 JST · delegation · Plan was: Alice grants the backend tier-admin bits on the `agent` token. Impossible: `PermissionedRegistry._getSettableRoles` returns `roleBitmap >> 128` for token resources, so token admin bits exist only if passed at `register()` and can never be delegated. Root roles are exempt and `hasRoles` = root | token, so the backend gets `(ORB|DOCUMENT|SELFIE) << 128` at ROOT via `grantRootRoles`. It can set tiers on any name in Alice's registry but can never grant or revoke MANDATE. Proven on fork (test/fork/ENSAuthority.t.sol). Cost ~30 min reading source; not in any doc we found.

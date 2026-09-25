@@ -14,3 +14,4 @@ Ordered. One item at a time; each is ticked only when its tests pass and it is p
 - World app_id / rp_id / signing key (phase 3 runs on env placeholders until then)
 - More Sepolia ETH before any further real broadcast (deployer ~0.0058 ETH)
 - 1inch mentor answer: Vault as Aqua maker
+- Sepolia redeploy (needs ETH): the deployed Vault predates `mandate()`, so MandateAquaRouter cannot gate it; redeploy Vault + router together (~0.006 ETH at 1 gwei)
