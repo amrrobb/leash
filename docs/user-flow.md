@@ -19,4 +19,4 @@ Rules
 - Paths judges ask for: cancel (World denied path), revoke (human control), C → B (recovery). Show cancel and C → B in the video.
 
 Build order for frontend: B first (can't be faked), then A′, then A and C.
-Wireframes: ../reference/design/Flow.dc.html, WF-A, WF-A2, WF-C. Hi-fi dashboard: Main.dc.html.
+Wireframes: ../leash-reference/design/Flow.dc.html, WF-A, WF-A2, WF-C. Hi-fi dashboard: Main.dc.html.

@@ -1,6 +1,6 @@
 # Frontend prompts — Leash
 
-Cara pakai: tempel **Prompt 0** dulu di Claude Design supaya gayanya terkunci, lalu satu prompt per halaman. Untuk referensi visual, tempel **Prompt R** ke ChatGPT, simpan gambarnya, lampirkan bersama Prompt 0.
+How to use: paste **Prompt 0** into Claude Design first to lock the style, then one prompt per screen. For a visual reference, paste **Prompt R** into ChatGPT, save the image, and attach it with Prompt 0.
 
 ---
 
