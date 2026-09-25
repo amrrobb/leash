@@ -375,4 +375,21 @@ contract VaultTest is Test {
         assertEq(vault.lastVerified(), block.timestamp);
         assertEq(vault.capNow(), 2_000e6);
     }
+
+    function test_mandate_aliveCapToken() public {
+        (bool alive, uint256 cap, address token) = vault.mandate();
+        assertTrue(alive);
+        assertEq(cap, 2_000e6);
+        assertEq(token, address(usdc));
+
+        vm.warp(block.timestamp + 3 days);
+        (alive, cap,) = vault.mandate();
+        assertTrue(alive, "decayed is still alive");
+        assertEq(cap, 0);
+
+        ens.revokeRoles(vault.ROLE_MANDATE(), agent);
+        (alive, cap,) = vault.mandate();
+        assertFalse(alive);
+        assertEq(cap, 0);
+    }
 }

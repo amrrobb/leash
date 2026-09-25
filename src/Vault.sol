@@ -154,6 +154,13 @@ contract Vault {
         return _capFrom(ens.roles(labelId, agent));
     }
 
+    /// @notice Everything MandateGate needs, from one ENS read: whether the agent still holds the
+    /// mandate, what the decayed cap allows now, and which token the cap is denominated in.
+    function mandate() external view returns (bool alive, uint256 cap, address token) {
+        uint256 agentRoles = ens.roles(labelId, agent);
+        return (agentRoles & ROLE_MANDATE != 0, _capFrom(agentRoles), capToken);
+    }
+
     function _capFrom(uint256 agentRoles) internal view returns (uint256) {
         if (agentRoles & ROLE_MANDATE == 0 || lastVerified == 0) return 0;
         return limitAt(_baseFrom(agentRoles), (block.timestamp - lastVerified) * speed);
