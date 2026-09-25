@@ -17,7 +17,7 @@ Read HANDOFF.md first. It is the source of truth for architecture, verified fact
 
 ## Always
 - `forge build --sizes` after touching the router; hard limit 24,576 bytes.
-- `FeeProtocol` is the first instruction in every strategy program.
+- Strategy program: `MandateGate` immediately before `XYCSwap`, then `Salt`. (FeeProtocol-first is not a swap-vm main rule.)
 - Taker traits need `allowPartialFill=true` or trimmed fills revert.
 - ENS token ids regenerate on every grant/revoke: use `findTokenId(label)` for ownership/transfer. Role reads (`roles`, `hasRoles`) accept `uint256(keccak256(label))`, which is what the Vault stores.
 - Attribution in README: "Powered by SwapVM — © Degensoft Ltd 2025".

@@ -64,7 +64,7 @@ Use swap-vm **branch `main`** (API `_runOpcode`). Tag v1.0.2 uses an `_opcodes()
 Stock AquaSwapVMRouter on main @ feb1641: 21,981 B (limit 24,576). Run `forge build --sizes` on every build.
 
 ### Strategy program (order is mandatory)
-`FeeProtocol` (must be first) → `MandateGate` → `XYCSwap` → `Salt`. An optional deadline as a safety net.
+`MandateGate` → `XYCSwap` → `Salt` (built and tested). The gate must sit right before `XYCSwap`. FeeProtocol is optional on swap-vm main; the earlier "must be first" note was wrong.
 
 ## 4. ENSv2 — verified facts
 
@@ -145,7 +145,6 @@ World failure path: Alice cancels at the QR → no tx, the cap keeps falling.
 - solc: swap-vm 0.8.30 via-IR; ENS 0.8.25. They cannot share a compile — use an Anvil fork.
 - Compiling the whole swap-vm test suite takes >20 min. This repo's `foundry.toml` points `test` at `test/` only.
 - Trimming needs the taker's `allowPartialFill=true`, otherwise it reverts.
-- `FeeProtocol` must be the first instruction.
 - Anvil dies when the shell closes: `setsid nohup anvil ... &`.
 - Product wording in the UI: what gets trimmed is the **market trade**, not the agent's action.
 - Aqua strategies are keyed by `keccak256(strategy)`; a docked hash can never be re-shipped, so every re-ship needs a fresh `Salt`.
