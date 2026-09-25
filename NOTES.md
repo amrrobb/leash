@@ -26,4 +26,5 @@ Log as you go: timestamp · sponsor · what you tried · what broke · how long 
 - RESOLVED (speed = 1_440) · demo speed vs 12s blocks · contract only sees block.timestamp; at speed 14_400 one Sepolia block = 48h of decay, so the cap goes base -> base/4 -> 0 in two blocks. Demo steps 2-5 have no runway. Needs a speed choice (720-1440 gives 3-6 min to zero) before the demo Vault deploy.
 - PARTLY RESOLVED (Vault.capToken added; gate logic in phase 4) · phase 4 units · capNow() is USDC 6-dec, but MandateGate trims amountIn/amountOut in the swap token's units (CATATAN #6). Gate must clamp the USDC leg only; Vault may need an immutable capToken. Decide before the router.
 - 2026-09-26 · ENS · IEAC `findTokenId(string)` matches v0's compile against contracts-v2 PermissionedRegistry. Still re-check against the 15 Sep Sepolia deployment in phase 2.
+- 2026-09-26 04:20 JST · Vault gas on real ENSv2 (fork) · switched to one `roles(labelId, agent)` read: ship 256,420 (same as mock) · capNow 33,422 cold. capNow is the per-swap cost MandateGate will add in phase 4 (v0 measured 25.7k with a bare hasRoles).
 
