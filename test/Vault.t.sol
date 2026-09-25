@@ -100,4 +100,15 @@ contract VaultTest is Test {
         vm.expectRevert(Vault.NotOwner.selector);
         vault.withdraw(IERC20(address(usdc)), 1);
     }
+
+    /// Aqua moves real tokens out of the Vault when the app pulls: the Vault is a working maker.
+    function test_aquaPull_movesTokensFromVault() public {
+        bytes32 h = _ship("s1");
+        address taker = makeAddr("taker");
+        vm.prank(app);
+        aqua.pull(address(vault), h, address(usdc), 400e6, taker);
+        assertEq(usdc.balanceOf(taker), 400e6);
+        assertEq(usdc.balanceOf(address(vault)), 9_600e6);
+        assertEq(_bal(h, address(usdc)), 600e6);
+    }
 }
