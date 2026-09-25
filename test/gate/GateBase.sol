@@ -13,6 +13,7 @@ import { Salt } from "swap-vm/instructions/Controls.sol";
 import { MockTaker } from "swap-vm-test/mocks/MockTaker.sol";
 import { MandateAquaRouter } from "../../src/MandateAquaRouter.sol";
 import { MandateGate } from "../../src/MandateGate.sol";
+import { LeashOrder } from "../../src/LeashOrder.sol";
 import { Vault } from "../../src/Vault.sol";
 import { IEAC } from "../../src/interfaces/IEAC.sol";
 import { DemoToken } from "../../src/DemoToken.sol";
@@ -37,14 +38,21 @@ abstract contract GateBase is Test {
     bytes32 orderHash;
 
     function _registry() internal virtual returns (IEAC);
+
+    /// Which address order the pair should have. SwapVM sorts tokens, so both must be tested.
+    function _usdcSortsFirst() internal pure virtual returns (bool) {
+        return true;
+    }
     function _grantMandateAndSelfie() internal virtual;
 
     function _setUpPool(uint256 speed) internal {
         aqua = new Aqua();
         router = new MandateAquaRouter(address(aqua), address(0), address(this), "SwapVM", "1.0.0");
         taker = new MockTaker(aqua, SwapVM(payable(address(router))), address(this));
-        usdc = new DemoToken("USD", "USDC", 6);
-        hype = new DemoToken("HYPE", "HYPE", 18);
+        do {
+            usdc = new DemoToken("USD", "USDC", 6);
+            hype = new DemoToken("HYPE", "HYPE", 18);
+        } while ((address(usdc) < address(hype)) != _usdcSortsFirst());
         vault = new Vault(owner, agent, backend, IAqua(address(aqua)), _registry(), address(usdc), "agent", speed);
         usdc.mint(address(vault), POOL_USDC);
         hype.mint(address(vault), POOL_HYPE);
@@ -55,15 +63,16 @@ abstract contract GateBase is Test {
         vm.prank(backend);
         vault.verify();
 
-        order = _order(bytes.concat(MandateGate.build(), XYCSwap.build(), Salt.build(uint64(1))));
+        order = LeashOrder.build(address(vault), address(usdc), address(hype), 1);
         orderHash = _ship(order);
     }
 
     function _order(bytes memory program) internal view returns (ISwapVM.Order memory) {
+        (address tokenA, address tokenB) = LeashOrder.sorted(address(usdc), address(hype));
         return MakerTraitsLib.build(MakerTraitsLib.Args({
             maker: address(vault),
-            tokenA: address(usdc),
-            tokenB: address(hype),
+            tokenA: tokenA,
+            tokenB: tokenB,
             shouldUnwrapWeth: false,
             useAquaInsteadOfSignature: true,
             usePermit2: false,
@@ -105,7 +114,7 @@ abstract contract GateBase is Test {
             isStrictThresholdAmount: false,
             isFirstTransferFromTaker: false,
             useTransferFromAndAquaPush: false,
-            isAToB: usdcIn,
+            isAToB: usdcIn == (address(usdc) < address(hype)),
             allowPartialFill: partialFill,
             usePermit2: false,
             threshold: "",

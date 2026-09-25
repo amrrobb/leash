@@ -156,3 +156,10 @@ contract MandateGateTest is GateBase {
         return _swap(order, amount, isExactIn, usdcIn, true);
     }
 }
+
+/// Same suite with HYPE sorting below USDC, the order the real Sepolia deploy has.
+contract MandateGateHypeFirstTest is MandateGateTest {
+    function _usdcSortsFirst() internal pure override returns (bool) {
+        return false;
+    }
+}
