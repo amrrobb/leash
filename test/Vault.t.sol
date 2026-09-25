@@ -111,4 +111,47 @@ contract VaultTest is Test {
         assertEq(usdc.balanceOf(address(vault)), 9_600e6);
         assertEq(_bal(h, address(usdc)), 600e6);
     }
+
+    function test_dock_worksAfterRevokeAndDecay() public {
+        bytes32 h = _ship("s1");
+        ens.revokeRoles(vault.ROLE_MANDATE() | vault.ROLE_SELFIE(), agent);
+        vm.warp(block.timestamp + 10 days);
+        assertEq(vault.capNow(), 0);
+        vm.prank(agent);
+        vault.dock(h);
+        assertEq(_bal(h, address(usdc)), 0);
+    }
+
+    function test_dock_byOwner() public {
+        bytes32 h = _ship("s1");
+        vm.prank(owner);
+        vault.dock(h);
+    }
+
+    function test_dock_revertsForStranger() public {
+        bytes32 h = _ship("s1");
+        vm.prank(makeAddr("stranger"));
+        vm.expectRevert(Vault.NotAgentOrOwner.selector);
+        vault.dock(h);
+    }
+
+    function test_dock_revertsTwice() public {
+        bytes32 h = _ship("s1");
+        vm.startPrank(agent);
+        vault.dock(h);
+        vm.expectRevert(Vault.UnknownStrategy.selector);
+        vault.dock(h);
+    }
+
+    /// Aqua strategies are immutable: re-opening needs a fresh salt, same bytes revert.
+    function test_reship_needsNewSalt() public {
+        bytes32 h = _ship("s1");
+        vm.prank(agent);
+        vault.dock(h);
+        (address[] memory t, uint256[] memory a) = _tokens();
+        vm.prank(agent);
+        vm.expectRevert();
+        vault.ship(app, "s1", t, a);
+        _ship("s2");
+    }
 }
