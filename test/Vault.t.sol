@@ -86,6 +86,21 @@ contract VaultTest is Test {
         vault.ship(app, "s1", t, a);
     }
 
+    function test_ship_revertsForNonAgent() public {
+        address other = makeAddr("other");
+        ens.grantRoles(vault.ROLE_MANDATE(), other);
+        (address[] memory t, uint256[] memory a) = _tokens();
+        vm.prank(other);
+        vm.expectRevert(Vault.NotAgent.selector);
+        vault.ship(app, "s1", t, a);
+    }
+
+    function test_capNow_zeroWhenMandateRevoked() public {
+        ens.revokeRoles(vault.ROLE_MANDATE(), agent);
+        assertEq(vault.capNow(), 0);
+        assertEq(vault.baseCap(), 2_000e6);
+    }
+
     function test_ship_revertsAtCapZero() public {
         vm.warp(block.timestamp + 3 days);
         (address[] memory t, uint256[] memory a) = _tokens();

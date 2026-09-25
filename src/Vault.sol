@@ -37,6 +37,9 @@ contract Vault {
     uint256 public immutable speed;
 
     string public agentLabel;
+    /// @notice keccak256(agentLabel). ENSv2 role reads accept any version of a label's id, so this
+    /// never goes stale even though the token id regenerates on every grant/revoke.
+    uint256 public immutable labelId;
     uint64 public lastVerified;
     /// @notice Owner-chosen ceiling; the effective base is min(ownerCap, tier cap). Zero = no mandate yet.
     uint256 public ownerCap;
@@ -58,6 +61,7 @@ contract Vault {
     error NotOwner();
     error NotBackend();
     error NotAgentOrOwner();
+    error NotAgent();
     error NoMandate();
     error MandateEmpty();
     error UnknownStrategy();
@@ -88,6 +92,7 @@ contract Vault {
         ens = ens_;
         capToken = capToken_;
         agentLabel = agentLabel_;
+        labelId = uint256(keccak256(bytes(agentLabel_)));
         speed = speed_;
     }
 
@@ -107,8 +112,10 @@ contract Vault {
         external
         returns (bytes32 strategyHash)
     {
-        require(ens.hasRoles(ens.findTokenId(agentLabel), ROLE_MANDATE, msg.sender), NoMandate());
-        require(capNow() > 0, MandateEmpty());
+        require(msg.sender == agent, NotAgent());
+        uint256 agentRoles = ens.roles(labelId, agent);
+        require(agentRoles & ROLE_MANDATE != 0, NoMandate());
+        require(_capFrom(agentRoles) > 0, MandateEmpty());
 
         for (uint256 i = 0; i < tokens.length; i++) {
             // Aqua.pull() transfers from the maker, so Aqua (not the app) needs the allowance.
@@ -138,18 +145,25 @@ contract Vault {
 
     /// @notice Highest tier the agent currently holds on its ENS name, capped by the owner.
     function baseCap() public view returns (uint256) {
-        uint256 id = ens.findTokenId(agentLabel);
-        uint256 tier;
-        if (ens.hasRoles(id, ROLE_ORB, agent)) tier = CAP_ORB;
-        else if (ens.hasRoles(id, ROLE_DOCUMENT, agent)) tier = CAP_DOCUMENT;
-        else if (ens.hasRoles(id, ROLE_SELFIE, agent)) tier = CAP_SELFIE;
-        return tier < ownerCap ? tier : ownerCap;
+        return _baseFrom(ens.roles(labelId, agent));
     }
 
-    /// @notice What the mandate still allows right now. Zero if never verified.
+    /// @notice What the mandate still allows right now. Zero if revoked, expired or never verified.
+    /// One ENS read: this is what MandateGate calls on every swap.
     function capNow() public view returns (uint256) {
-        if (lastVerified == 0) return 0;
-        return limitAt(baseCap(), (block.timestamp - lastVerified) * speed);
+        return _capFrom(ens.roles(labelId, agent));
+    }
+
+    function _capFrom(uint256 agentRoles) internal view returns (uint256) {
+        if (agentRoles & ROLE_MANDATE == 0 || lastVerified == 0) return 0;
+        return limitAt(_baseFrom(agentRoles), (block.timestamp - lastVerified) * speed);
+    }
+
+    function _baseFrom(uint256 agentRoles) internal view returns (uint256) {
+        uint256 tier = agentRoles & ROLE_ORB != 0
+            ? CAP_ORB
+            : agentRoles & ROLE_DOCUMENT != 0 ? CAP_DOCUMENT : agentRoles & ROLE_SELFIE != 0 ? CAP_SELFIE : 0;
+        return tier < ownerCap ? tier : ownerCap;
     }
 
     /// @notice Halves every PERIOD, interpolates linearly inside a period, zero from CUTOFF on.
