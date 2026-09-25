@@ -1,0 +1,81 @@
+import { test, before, after } from "node:test";
+import assert from "node:assert/strict";
+import { mkdtempSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { openStore } from "../src/store.js";
+import { createApp } from "../src/app.js";
+
+const dir = mkdtempSync(join(tmpdir(), "leash-app-"));
+const staticDir = join(dir, "public");
+
+const world = { appId: "app_x", rpId: "rp_x", signingKey: "0x" + "22".repeat(32), action: "leash-verify", verifyUrl: "https://portal.test/v", environment: "staging" };
+const config = { world, deployments: { vault: "0x333735bE6692069c9D30f25B5b4d74419Fb787d5", agentLabel: "agent" } };
+const chain = {
+  readState: async () => ({ cap: 1_234_000_000n, alive: true, speed: 1440n }),
+  grantTier: async () => "0xg",
+  stampVerified: async () => "0xv",
+};
+const demoCalls = [];
+const demo = {
+  setCap: async (cap) => (demoCalls.push(["setCap", cap]), "0xc"),
+  revokeMandate: async () => (demoCalls.push(["revoke"]), "0xr"),
+  grantMandate: async () => (demoCalls.push(["grant"]), "0xm"),
+};
+
+let server, base, bare, bareBase;
+before(async () => {
+  const fs = await import("node:fs");
+  fs.mkdirSync(staticDir, { recursive: true });
+  writeFileSync(join(staticDir, "index.html"), "<h1>leash</h1>");
+  writeFileSync(join(dir, "secret.txt"), "nope");
+  const store = openStore(join(dir, "t.db"));
+  const okPortal = async () => new Response(JSON.stringify({ success: true }), { status: 200 });
+  server = createApp({ config, store, chain, demo, staticDir, fetchImpl: okPortal }).listen(0);
+  base = `http://127.0.0.1:${server.address().port}`;
+  bare = createApp({ config, store: openStore(join(dir, "u.db")), chain, staticDir }).listen(0);
+  bareBase = `http://127.0.0.1:${bare.address().port}`;
+});
+after(() => {
+  server.close();
+  bare.close();
+});
+
+const post = (url, body) => fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body ?? {}) });
+
+test("GET /api/state serialises bigints", async () => {
+  const body = await (await fetch(`${base}/api/state`)).json();
+  assert.deepEqual(body, { cap: "1234000000", alive: true, speed: "1440" });
+});
+
+test("rp-context then proof: end to end over HTTP", async () => {
+  const ctx = await (await post(`${base}/api/rp-context`)).json();
+  const result = { protocol_version: "4.0", nonce: ctx.rp_context.nonce, action: "leash-verify", responses: [{ identifier: "selfie", nullifier: "0xa" }] };
+  const res = await post(`${base}/api/proof`, result);
+  assert.equal(res.status, 200);
+  assert.deepEqual((await res.json()).txs, { grantTier: "0xg", verify: "0xv" });
+  const replay = await post(`${base}/api/proof`, result);
+  assert.equal(replay.status, 409);
+});
+
+test("invalid JSON is a 400, not a crash", async () => {
+  const res = await fetch(`${base}/api/proof`, { method: "POST", body: "{nope" });
+  assert.equal(res.status, 400);
+});
+
+test("demo owner routes call the owner signer", async () => {
+  await post(`${base}/api/demo/set-cap`, { cap: "500000000" });
+  await post(`${base}/api/demo/revoke`);
+  await post(`${base}/api/demo/grant-mandate`);
+  assert.deepEqual(demoCalls, [["setCap", 500_000_000n], ["revoke"], ["grant"]]);
+});
+
+test("demo routes do not exist without a demo signer", async () => {
+  assert.equal((await post(`${bareBase}/api/demo/revoke`)).status, 404);
+});
+
+test("serves the frontend and blocks path traversal", async () => {
+  assert.equal(await (await fetch(`${base}/`)).text(), "<h1>leash</h1>");
+  const res = await fetch(`${base}/..%2Fsecret.txt`);
+  assert.notEqual(await res.text(), "nope");
+});
