@@ -15,7 +15,7 @@ Have open: the dashboard in State B with the agent loop and the market bot runni
 | Proof it's real (20 s) | "This isn't a UI rule. It's a SwapVM opcode: it runs inside every quote and swap. Watch: the market just asked for 10,000 and got 7,500." | Feed row "Asked 10,000 · allowed 7,500 · Trimmed" |
 | The asymmetry (15 s) | "When it hits zero the bot can't open anything, but it can always close. That's the design: the failure state is resting, not stuck." | Wait for or show State C; terminal: "refused: MandateEmpty… closing… waiting for the human" |
 | Human comes back (15 s) | "Alice scans once. The cap is back, the bot resumes. And the permission lives on her ENS name: she can revoke it, and anyone on-chain can read it." | Verify again → B; Revoke → C → Restore |
-| Close (10 s) | "Three sponsors, each load-bearing: ENS holds the permission, World makes renewal human-only, the 1inch opcode enforces it inside the trade. All live on Sepolia, 157 tests." | Landing page or GitHub |
+| Close (10 s) | "Three sponsors, each load-bearing: ENS holds the permission, World makes renewal human-only, the 1inch opcode enforces it inside the trade. All live on Sepolia, 172 tests." | Landing page or GitHub |
 
 Memorise the one-liners (from HANDOFF §9):
 - vs Doca / Harbormaster: *the one running the loop isn't the owner, and its authority runs out.*
@@ -36,7 +36,7 @@ Memorise the one-liners (from HANDOFF §9):
 | 6 | **Live demo** | The video: verify → mandate → agent ships → trimmed trade → zero → refused but closes → verify again | (the demo, 60–90 s) |
 | 7 | **The opcode** | 12 lines of `MandateGate.exec`; "26.6k gas per swap, measured on the real ENSv2 registry" | "This is the whole enforcement: read the maker's mandate, revert if revoked or empty, trim the USDC leg. Runs in quotes too, so there's no path around it." |
 | 8 | **What each sponsor gave us** | Three cards: ENSv2 root-admin pattern · World nonce-based replay + one human per Vault · Aqua router had no permission instruction, now it does | "Each integration changed the design. The notes file has every friction with a timestamp." |
-| 9 | **Numbers** | 157 tests · 10,000 → 7,500 on-chain · 22,509 B router · zero at 72 h · leash.eth live | "Everything here ran on Sepolia today, not on a mock." |
+| 9 | **Numbers** | 172 tests · 10,000 → 7,500 on-chain · 22,509 B router · zero at 72 h · leash.eth live | "Everything here ran on Sepolia today, not on a mock." |
 | 10 | **Where it goes** | Per-trade cap → cumulative budget · more curves · any recurring authority (payroll streams, grant disbursement, treasury limits) | "The primitive is general: any authority that should die when the human stops showing up." |
 
 ## 3. Demo run sheet
