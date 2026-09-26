@@ -45,3 +45,13 @@ test("a vault has one human: a second person is refused until the owner resets",
   assert.equal(s.unbindVault("0xVAULT1"), 1);
   assert.equal(s.bindHuman("0xjudge", "0xVault1", "orb"), true);
 });
+
+test("agent events are kept per vault", () => {
+  const s = openStore(dbFile());
+  s.addEvent("0xVaultA", "blocked", "tried", "no room", 10);
+  s.addEvent("0xvaultb", "closed", "closed", "docked", 11);
+  assert.deepEqual(s.recentEvents("0xvaulta").map((e) => e.title), ["tried"]);
+  assert.deepEqual(s.recentEvents("0xVAULTB").map((e) => e.title), ["closed"]);
+  assert.equal(s.recentEvents("0xnobody").length, 0);
+});
+

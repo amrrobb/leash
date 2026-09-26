@@ -1,6 +1,8 @@
-import { createPublicClient, createWalletClient, decodeFunctionData, http, keccak256, toBytes, parseAbi } from "viem";
+import { createPublicClient, createWalletClient, decodeFunctionData, encodeFunctionData, http, keccak256, toBytes, parseAbi } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { sepolia } from "viem/chains";
+
+const MANDATE = 1n << 40n;
 
 export const vaultAbi = parseAbi([
   "function capNow() view returns (uint256)",
@@ -10,7 +12,11 @@ export const vaultAbi = parseAbi([
   "function speed() view returns (uint256)",
   "function agent() view returns (address)",
   "function owner() view returns (address)",
+  "function agentLabel() view returns (string)",
+  "function labelId() view returns (uint256)",
   "function verify()",
+  "function setCap(uint256 cap)",
+  "function withdraw(address token, uint256 amount)",
   "event Shipped(bytes32 indexed strategyHash, address indexed app, address[] tokens, uint256[] amounts)",
   "event Docked(bytes32 indexed strategyHash)",
   "event Verified(uint64 at)",
@@ -18,16 +24,36 @@ export const vaultAbi = parseAbi([
   "event Withdrawn(address indexed token, uint256 amount)",
 ]);
 
-const balanceAbi = parseAbi(["function balanceOf(address) view returns (uint256)"]);
+export const registryAbi = parseAbi([
+  "function roles(uint256 anyId, address account) view returns (uint256)",
+  "function grantRoles(uint256 anyId, uint256 roleBitmap, address account) returns (bool)",
+  "function revokeRoles(uint256 anyId, uint256 roleBitmap, address account) returns (bool)",
+]);
+
+export const factoryAbi = parseAbi([
+  "function vaultOf(address owner) view returns (address)",
+  "function isVault(address vault) view returns (bool)",
+  "function createVault(address agent, string label) returns (address)",
+  "event VaultCreated(address indexed owner, address indexed vault, address indexed agent, string label)",
+]);
+
+const erc20Abi = parseAbi([
+  "function balanceOf(address) view returns (uint256)",
+  "function symbol() view returns (string)",
+  "function mint(address to, uint256 amount)",
+  "function transfer(address to, uint256 amount) returns (bool)",
+]);
 
 export const routerAbi = parseAbi([
   "function swap((address maker, uint256 traits, bytes data) order, uint256 amount, bytes takerTraitsAndData) payable returns (uint256, uint256, bytes32)",
   "event Swapped(bytes32 orderHash, address maker, address taker, address tokenIn, address tokenOut, uint256 amountIn, uint256 amountOut)",
 ]);
 
-/** Turns raw Vault/router logs into feed entries, newest first. Pure, so it is unit-tested. */
-const erc20Abi = parseAbi(["function symbol() view returns (string)"]);
+export function labelId(label) {
+  return BigInt(keccak256(toBytes(label)));
+}
 
+/** Turns raw Vault/router logs into feed entries, newest first. Pure, so it is unit-tested. */
 export function toFeed(logs, { usdc, blockTimes, asks = new Map(), symbols = new Map() }) {
   const usd = (v) => Number(v) / 1e6;
   const out = [];
@@ -70,27 +96,16 @@ export function toFeed(logs, { usdc, blockTimes, asks = new Map(), symbols = new
   return out.sort((x, y) => y.block - x.block || y.logIndex - x.logIndex);
 }
 
-export const registryAbi = parseAbi([
-  "function roles(uint256 anyId, address account) view returns (uint256)",
-  "function grantRoles(uint256 anyId, uint256 roleBitmap, address account) returns (bool)",
-  "function revokeRoles(uint256 anyId, uint256 roleBitmap, address account) returns (bool)",
-]);
-
-const MANDATE = 1n << 40n;
-
-export function labelId(label) {
-  return BigInt(keccak256(toBytes(label)));
-}
-
-/** viem-backed chain access for one deployment. `rpcUrl` may point at an Anvil fork. */
+/** viem-backed chain access for one deployment. Every vault-specific call takes the vault address:
+ * with the factory, each owner has their own. `rpcUrl` may point at an Anvil fork. */
 export function createChain({ rpcUrl, backendKey, deployments }) {
   const transport = http(rpcUrl);
   const publicClient = createPublicClient({ chain: sepolia, transport });
   const account = backendKey ? privateKeyToAccount(backendKey) : null;
   const walletClient = account ? createWalletClient({ chain: sepolia, transport, account }) : null;
-  const vault = deployments.vault;
   const registry = deployments.userRegistry;
-  const id = labelId(deployments.agentLabel ?? "agent");
+  const factory = deployments.factory;
+  const infoCache = new Map();
 
   async function send(tx) {
     if (!walletClient) throw Object.assign(new Error("BACKEND_KEY is not set"), { status: 503 });
@@ -100,10 +115,39 @@ export function createChain({ rpcUrl, backendKey, deployments }) {
     return hash;
   }
 
+  const bad = (msg) => Object.assign(new Error(msg), { status: 400 });
+
   return {
     publicClient,
+
+    /** True for vaults the factory made, and for the deployment's demo vault. */
+    async isKnownVault(vault) {
+      if (!vault || !/^0x[0-9a-fA-F]{40}$/.test(vault)) return false;
+      if (deployments.vault && vault.toLowerCase() === deployments.vault.toLowerCase()) return true;
+      if (!factory) return false;
+      return publicClient.readContract({ address: factory, abi: factoryAbi, functionName: "isVault", args: [vault] });
+    },
+
+    /** The vault a wallet owns through the factory, or the zero address. */
+    async vaultOf(owner) {
+      if (!factory) return deployments.vault ?? null;
+      return publicClient.readContract({ address: factory, abi: factoryAbi, functionName: "vaultOf", args: [owner] });
+    },
+
+    /** Immutable facts about a vault (owner, agent, label); cached. */
+    async vaultInfo(vault) {
+      const key = vault.toLowerCase();
+      if (!infoCache.has(key)) {
+        const read = (functionName) => publicClient.readContract({ address: vault, abi: vaultAbi, functionName });
+        const [owner, agent, agentLabel, id] = await Promise.all([read("owner"), read("agent"), read("agentLabel"), read("labelId")]);
+        infoCache.set(key, { vault, owner, agent, agentLabel, labelId: id });
+      }
+      return infoCache.get(key);
+    },
+
     /** One block for every read, so the screen never mixes two chain states. */
-    async readState() {
+    async readState(vault) {
+      const info = await this.vaultInfo(vault);
       const block = await publicClient.getBlock();
       const at = { blockNumber: block.number };
       const read = (functionName, address = vault, abi = vaultAbi, args = []) =>
@@ -114,17 +158,21 @@ export function createChain({ rpcUrl, backendKey, deployments }) {
         read("ownerCap"),
         read("lastVerified"),
         read("speed"),
-        read("roles", registry, registryAbi, [id, deployments.agent]),
-        read("balanceOf", deployments.usdc, balanceAbi, [vault]),
-        deployments.hype ? read("balanceOf", deployments.hype, balanceAbi, [vault]) : 0n,
+        read("roles", registry, registryAbi, [info.labelId, info.agent]),
+        read("balanceOf", deployments.usdc, erc20Abi, [vault]),
+        deployments.hype ? read("balanceOf", deployments.hype, erc20Abi, [vault]) : 0n,
       ]);
       const alive = (agentRoles & MANDATE) !== 0n;
-      return { blockNumber: block.number, timestamp: block.timestamp, alive, cap, baseCap, ownerCap, lastVerified, speed, agentRoles, vaultUsdc, vaultHype };
+      return {
+        vault, owner: info.owner, agent: info.agent, agentLabel: info.agentLabel,
+        blockNumber: block.number, timestamp: block.timestamp, alive, cap, baseCap, ownerCap, lastVerified, speed, agentRoles, vaultUsdc, vaultHype,
+      };
     },
-    /** Recent Vault (and router, if deployed) events as feed entries. */
-    async readFeed(limit = 8) {
+
+    /** Recent Vault (and router, if deployed) events for one vault as feed entries. */
+    async readFeed(vault, limit = 8) {
       const latest = await publicClient.getBlockNumber();
-      const fromBlock = deployments.deployBlock ? BigInt(deployments.deployBlock) : latest > 2000n ? latest - 2000n : 0n;
+      const fromBlock = deployments.factoryBlock ? BigInt(deployments.factoryBlock) : deployments.deployBlock ? BigInt(deployments.deployBlock) : latest > 2000n ? latest - 2000n : 0n;
       const [vaultLogs, routerLogs] = await Promise.all([
         publicClient.getContractEvents({ address: vault, abi: vaultAbi, fromBlock, toBlock: latest }),
         deployments.router
@@ -153,11 +201,45 @@ export function createChain({ rpcUrl, backendKey, deployments }) {
       await Promise.all(others.map(async (t) => symbols.set(t, await publicClient.readContract({ address: t, abi: erc20Abi, functionName: "symbol" }).catch(() => undefined))));
       return toFeed(logs, { usdc: deployments.usdc, blockTimes, asks, symbols }).slice(0, limit);
     },
-    grantTier(bit) {
-      return send({ address: registry, abi: registryAbi, functionName: "grantRoles", args: [id, bit, deployments.agent] });
+
+    /** Backend writes: the only two things it may do after a proof. */
+    async grantTier(vault, bit) {
+      const info = await this.vaultInfo(vault);
+      return send({ address: registry, abi: registryAbi, functionName: "grantRoles", args: [info.labelId, bit, info.agent] });
     },
-    stampVerified() {
+    stampVerified(vault) {
       return send({ address: vault, abi: vaultAbi, functionName: "verify" });
+    },
+
+    /** Calldata for the owner's wallet to sign. The page never encodes ABI itself. */
+    async buildTx(kind, p) {
+      const usdcAmount = () => BigInt(p.usdc ?? 0), hypeAmount = () => BigInt(p.hype ?? 0);
+      switch (kind) {
+        case "createVault":
+          if (!factory) throw bad("no factory in this deployment");
+          if (!/^0x[0-9a-fA-F]{40}$/.test(p.agent ?? "")) throw bad("agent must be an address");
+          if (!/^[a-z0-9-]{3,32}$/.test(p.label ?? "")) throw bad("label: 3-32 chars, a-z 0-9 -");
+          return { to: factory, data: encodeFunctionData({ abi: factoryAbi, functionName: "createVault", args: [p.agent, p.label] }) };
+        case "setCap":
+          return { to: p.vault, data: encodeFunctionData({ abi: vaultAbi, functionName: "setCap", args: [BigInt(p.cap)] }) };
+        case "withdraw":
+          return { to: p.vault, data: encodeFunctionData({ abi: vaultAbi, functionName: "withdraw", args: [p.token, BigInt(p.amount)] }) };
+        case "revoke": {
+          const info = await this.vaultInfo(p.vault);
+          return { to: registry, data: encodeFunctionData({ abi: registryAbi, functionName: "revokeRoles", args: [info.labelId, MANDATE, info.agent] }) };
+        }
+        case "restore": {
+          const info = await this.vaultInfo(p.vault);
+          return { to: registry, data: encodeFunctionData({ abi: registryAbi, functionName: "grantRoles", args: [info.labelId, MANDATE, info.agent] }) };
+        }
+        case "depositUsdc":
+          // Demo tokens mint to anyone; a real token would be `transfer(vault, amount)` from the wallet.
+          return { to: deployments.usdc, data: encodeFunctionData({ abi: erc20Abi, functionName: "mint", args: [p.vault, usdcAmount()] }) };
+        case "depositHype":
+          return { to: deployments.hype, data: encodeFunctionData({ abi: erc20Abi, functionName: "mint", args: [p.vault, hypeAmount()] }) };
+        default:
+          throw bad(`unknown tx kind ${kind}`);
+      }
     },
   };
 }

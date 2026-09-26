@@ -32,9 +32,11 @@ export function describeResult(result) {
   };
 }
 
-/** Verifies a completion result and, only if every check passes, grants the tier and stamps the Vault. */
-export async function handleProof({ result, world, store, chain, vault, fetchImpl = fetch }) {
+/** Verifies a completion result for one vault and, only if every check passes, grants the tier on
+ * that vault's agent name and stamps that vault's clock. */
+export async function handleProof({ result, vault, world, store, chain, fetchImpl = fetch }) {
   requireWorld(world);
+  if (!(await chain.isKnownVault(vault))) throw fail(400, "unknown vault");
   const legacy = result?.protocol_version === "3.0";
   if (result?.protocol_version !== "4.0" && !(legacy && world.allowLegacy)) throw fail(400, "expected a World ID 4.0 uniqueness proof");
   if (result.action !== world.action) throw fail(400, `proof is for action "${result.action}", expected "${world.action}"`);
@@ -44,9 +46,9 @@ export async function handleProof({ result, world, store, chain, vault, fetchImp
 
   const best = strongestCredential(result);
   if (!best) throw fail(400, "no supported credential in the proof");
-  if (!store.bindHuman(best.nullifier, vault, best.tier.name)) throw fail(409, "This vault already has its human. A verified person who isn't Alice can't renew her agent.");
+  if (!store.bindHuman(best.nullifier, vault, best.tier.name)) throw fail(409, "This vault already has its human. A verified person who isn't the owner can't renew their agent.");
 
-  const grantTx = await chain.grantTier(best.tier.bit);
-  const verifyTx = await chain.stampVerified();
+  const grantTx = await chain.grantTier(vault, best.tier.bit);
+  const verifyTx = await chain.stampVerified(vault);
   return { tier: best.tier.name, cap: best.tier.cap, credential: best.identifier, protocol: result.protocol_version, txs: { grantTier: grantTx, verify: verifyTx } };
 }

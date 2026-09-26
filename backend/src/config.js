@@ -12,7 +12,7 @@ export function loadConfig(env = process.env) {
     rpcUrl: env.RPC_URL ?? env.SEPOLIA_RPC,
     backendKey: env.BACKEND_KEY,
     // One database per Vault: a redeploy starts clean instead of tripping "already backs another Vault".
-    dbPath: env.DB_PATH ?? `${root}backend/leash-${deployments.vault.toLowerCase()}.db`,
+    dbPath: env.DB_PATH ?? `${root}backend/leash-${(deployments.factory ?? deployments.vault ?? "local").toLowerCase()}.db`,
     deployments,
     world: {
       appId: env.WORLD_APP_ID,

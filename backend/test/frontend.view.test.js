@@ -21,10 +21,13 @@ test("tier is the highest bit held", () => {
   assert.equal(tierOf(0n), null);
 });
 
-test("screen: A before a mandate, A2 after a proof, dashboard once a cap is set", () => {
-  assert.equal(screenOf({ ownerCap: "0" }), "A");
+test("screen: connect, then create, then verify, then A2 after a proof, then the dashboard", () => {
+  assert.equal(screenOf(undefined, {}), "connect");
+  assert.equal(screenOf(undefined, { account: "0xabc" }), "create");
+  assert.equal(screenOf({ ownerCap: "0" }, { account: "0xabc" }), "verify");
   assert.equal(screenOf({ ownerCap: "0" }, { tier: "selfie" }), "A2");
   assert.equal(screenOf({ ownerCap: "2000000000" }), "BC");
+  assert.equal(screenOf({ ownerCap: "2000000000" }, {}), "BC", "a visitor with a vault URL sees the dashboard");
 });
 
 const snap = (over = {}) => ({

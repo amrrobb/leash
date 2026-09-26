@@ -12,7 +12,7 @@ test("labelId is keccak256 of the label (value from `cast keccak agent`)", () =>
 
 test("reads the deployed Sepolia Vault in one block", { skip: !config.rpcUrl && "SEPOLIA_RPC not set" }, async () => {
   const chain = createChain(config);
-  const s = await chain.readState();
+  const s = await chain.readState(config.deployments.vault);
   assert.equal(s.speed, 1440n);
   // Live state: Alice may have revoked at any moment, so only check the derivation, not the value.
   assert.equal(typeof s.alive, "boolean");
@@ -22,7 +22,18 @@ test("reads the deployed Sepolia Vault in one block", { skip: !config.rpcUrl && 
 
 test("reads the Vault's real event feed on Sepolia", { skip: !config.rpcUrl && "SEPOLIA_RPC not set" }, async () => {
   const chain = createChain({ ...config, deployments: { ...config.deployments, deployBlock: 11781150 } });
-  const feed = await chain.readFeed();
+  const feed = await chain.readFeed(config.deployments.vault);
   assert.ok(Array.isArray(feed));
   for (const e of feed) assert.ok(e.title && e.kind && e.tx);
 });
+
+test("the factory answers vaultOf and isVault on Sepolia", { skip: !config.rpcUrl && "SEPOLIA_RPC not set" }, async () => {
+  const chain = createChain(config);
+  assert.equal(await chain.isKnownVault(config.deployments.vault), true, "demo vault is known");
+  assert.equal(await chain.isKnownVault("0x0000000000000000000000000000000000000001"), false);
+  assert.equal(await chain.vaultOf("0x0000000000000000000000000000000000000001"), "0x0000000000000000000000000000000000000000");
+  const tx = await chain.buildTx("createVault", { agent: config.deployments.agent, label: "probe-agent" });
+  assert.equal(tx.to, config.deployments.factory);
+  assert.match(tx.data, /^0x[0-9a-f]+$/);
+});
+

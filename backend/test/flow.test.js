@@ -29,7 +29,8 @@ beforeEach(() => {
   calls = [];
   portalCalls = 0;
   chain = {
-    grantTier: async (bit) => (calls.push(["grantTier", bit]), "0xgrant"),
+    isKnownVault: async (v) => typeof v === "string" && v.toLowerCase() !== "0x0000000000000000000000000000000000000bad",
+    grantTier: async (vault, bit) => (calls.push(["grantTier", bit]), "0xgrant"),
     stampVerified: async () => (calls.push(["verify"]), "0xverify"),
   };
 });
@@ -95,7 +96,7 @@ test("the same human can re-verify: renewal works", async () => {
 test("a second human cannot renew Alice's vault", async () => {
   await handleProof({ result: freshResult("selfie", "0xalice"), world, store, chain, vault: VAULT, fetchImpl: okPortal });
   calls = [];
-  await assert.rejects(handleProof({ result: freshResult("proof_of_human", "0xjudge"), world, store, chain, vault: VAULT, fetchImpl: okPortal }), (e) => e.status === 409 && /isn't Alice/.test(e.message));
+  await assert.rejects(handleProof({ result: freshResult("proof_of_human", "0xjudge"), world, store, chain, vault: VAULT, fetchImpl: okPortal }), (e) => e.status === 409 && /isn't the owner/.test(e.message));
   assert.deepEqual(calls, []);
 });
 
@@ -103,7 +104,7 @@ test("one human cannot back a second Vault", async () => {
   await handleProof({ result: freshResult("selfie", "0xalice"), world, store, chain, vault: VAULT, fetchImpl: okPortal });
   calls = [];
   await assert.rejects(
-    handleProof({ result: freshResult("selfie", "0xalice"), world, store, chain, vault: "0x0000000000000000000000000000000000000bad", fetchImpl: okPortal }),
+    handleProof({ result: freshResult("selfie", "0xalice"), world, store, chain, vault: "0x00000000000000000000000000000000000000B2", fetchImpl: okPortal }),
     (e) => e.status === 409,
   );
   assert.deepEqual(calls, []);
@@ -140,5 +141,10 @@ test("rejection diagnostics show the shape, never the proof or nullifier", () =>
   assert.deepEqual(d.identifiers, ["selfie"]);
   assert.equal(d.nonce, "0x12345678… (18 chars)");
   assert.doesNotMatch(JSON.stringify(d), /0xsecret|0xp/);
+});
+
+test("a proof for a vault the factory never made is refused before anything else", async () => {
+  await assert.rejects(handleProof({ result: freshResult(), world, store, chain, vault: "0x0000000000000000000000000000000000000bad", fetchImpl: okPortal }), /unknown vault/);
+  assert.deepEqual(calls, []);
 });
 
