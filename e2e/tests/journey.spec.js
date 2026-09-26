@@ -271,10 +271,16 @@ test.describe.serial("Leash journey on a Sepolia fork: any wallet, its own vault
 
   test("Switching accounts inside the wallet: the page follows without a reload", async () => {
     await expect(page.getByTestId("revoke")).toBeVisible();
-    await page.evaluate((next) => window.ethereum.__switchAccount(next), keys.addr.taker); // a wallet with no vault
+    await page.evaluate((next) => window.ethereum.__switchAccount(next), keys.addr.taker); // a wallet with no vault: its own Create screen
+    await expect(page.getByTestId("state-create")).toBeVisible();
+    await expect(page.getByTestId("owner-name")).toContainText(keys.addr.taker.slice(0, 6));
+    // ...and a visitor who opens someone's vault by URL sees it read-only, with a way to create their own.
+    await page.goto(`/app?vault=${vault}`);
     await expect(page.getByTestId("viewer-note")).toBeVisible();
     await expect(page.getByTestId("revoke")).toBeHidden();
-    await expect(page.getByTestId("owner-name")).toContainText(keys.addr.taker.slice(0, 6));
+    await page.getByTestId("viewer-create").click();
+    await expect(page.getByTestId("state-create")).toBeVisible();
+    await page.goto(`/app?vault=${vault}`);
     await page.evaluate((next) => window.ethereum.__switchAccount(next), keys.addr.alice);
     await expect(page.getByTestId("viewer-note")).toBeHidden();
     await expect(page.getByTestId("revoke")).toBeVisible();

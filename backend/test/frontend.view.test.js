@@ -25,7 +25,11 @@ test("screen: connect, then create, then verify, then A2 after a proof, then the
   assert.equal(screenOf(undefined, {}), "connect");
   assert.equal(screenOf(undefined, { account: "0xabc" }), "create");
   assert.equal(screenOf({ ownerCap: "0" }, { account: "0xabc" }), "verify");
-  assert.equal(screenOf({ ownerCap: "0" }, { tier: "selfie" }), "A2");
+  assert.equal(screenOf({ ownerCap: "0" }, { account: "0xabc", tier: "selfie" }), "A2");
+  // The setup screens belong to the owner; a visitor (other account, or no account) sees the vault read-only.
+  assert.equal(screenOf({ ownerCap: "0", owner: "0xabc" }, { account: "0xABC" }), "verify");
+  assert.equal(screenOf({ ownerCap: "0", owner: "0xabc" }, { account: "0xdef" }), "BC");
+  assert.equal(screenOf({ ownerCap: "0", owner: "0xabc" }, {}), "BC");
   assert.equal(screenOf({ ownerCap: "2000000000" }), "BC");
   assert.equal(screenOf({ ownerCap: "2000000000" }, {}), "BC", "a visitor with a vault URL sees the dashboard");
 });

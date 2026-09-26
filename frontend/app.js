@@ -45,7 +45,9 @@ function ago(sec) {
  * no mandate yet, no proof this session · A2: proof accepted, fund and set the cap · BC: the dashboard. */
 export function screenOf(s, session = {}) {
   if (!s) return session.account ? "create" : "connect";
-  if (BigInt(s.ownerCap) === 0n) return session.tier ? "A2" : "verify";
+  // The verify / fund screens are the owner's setup steps; anyone else sees the vault read-only.
+  const owner = Boolean(session.account) && (!s.owner || s.owner.toLowerCase() === session.account.toLowerCase());
+  if (BigInt(s.ownerCap) === 0n && owner) return session.tier ? "A2" : "verify";
   return "BC";
 }
 
@@ -270,6 +272,7 @@ if (typeof document !== "undefined") {
     // Owner actions only for the wallet that owns this vault; anyone else looks.
     const owner = isOwner();
     $("viewer-note").hidden = owner;
+    $("viewer-create").hidden = !session.account;
     $("verify-again").hidden = v.revoked;
     $("revoke").hidden = !owner || v.tone === "pause";
     $("restore").hidden = !owner || !v.revoked;
@@ -374,6 +377,8 @@ if (typeof document !== "undefined") {
     }
   }
   $("connect-wallet").addEventListener("click", connect);
+  // A connected visitor looking at someone else's vault can leave for their own Create screen.
+  $("viewer-create").addEventListener("click", () => { session.vault = null; snap = null; history.replaceState(null, "", "/app"); render(); });
 
   // The wallet can switch accounts or chains behind the page. Follow it: a new account that owns a vault goes
   // to its vault; one that does not keeps looking at the current vault as a visitor (or lands on Create).
@@ -385,6 +390,7 @@ if (typeof document !== "undefined") {
     if (next) {
       const { vault } = await api(`/api/vault?owner=${next}`).catch(() => ({}));
       if (vault && vault !== ZERO) { session.vault = vault; history.replaceState(null, "", `/app?vault=${vault}`); }
+      else if (!new URLSearchParams(location.search).get("vault")) { session.vault = null; snap = null; history.replaceState(null, "", "/app"); } // no vault: create one
     }
     await poll();
   }
