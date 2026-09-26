@@ -101,6 +101,7 @@ Cost: **26.6k gas per swap** cold against the real registry (119.5k vs 92.9k) [`
 
 - `GET /api/state`: every read pinned to one block: `capNow`, `baseCap`, `ownerCap`, `lastVerified`, `speed`, `roles(labelId, agent)`. The page polls every 3 s and animates the number each second using the same curve as `Vault.limitAt`, on chain time.
 - `GET /api/feed`: Vault events plus router `Swapped` for this maker. The ask is decoded from `swap(order, amount, ...)` calldata, so a trim reads "Asked 10,000 · allowed 1,967 USDC".
+- `GET /api/agent?address=`: the address's ERC-8004 identity. `balanceOf` on the Identity Registry, then the `Registered` event filtered by `owner` (the standard has no reverse lookup); the name comes from the registration file when it is a data URI or an https URL that answers within 3 s. Cached 60 s; never throws.
 - `POST /api/demo/{set-cap,revoke,grant-mandate,withdraw}`: Alice's owner actions, signed with `DEMO_OWNER_KEY`. They answer on loopback only, or with the `x-demo-token` header.
 
 ## 7. Smoke test on real Sepolia

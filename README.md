@@ -53,6 +53,7 @@ market (any taker) ── swap ──► MandateAquaRouter ── 0x2f MandateGa
 | Backend — World v4 verify, single-use nonces, one human per Vault, two transactions, chain reads pinned to one block, activity feed | `backend/` | yes |
 | Dashboard — four states, live decay, an ASCII leash that sags as authority decays | `frontend/` | yes |
 | Landing — liquid-glass hero at `/` | `frontend/landing/` | yes |
+| ERC-8004 badge — the agent's identity from the Sepolia Identity Registry (`0x8004A818…BD9e`), shown when you pick an agent and on the mandate card; informational, never a gate | `backend/src/identity.js` | yes |
 | Agent + market + attack — autonomous loop, a random taker, and a prompt-injected agent that tries six ways to get the money and is refused six times | `agent/` | yes |
 | SwapVM engine, `XYCSwap`, Aqua, ENSv2 registries, IDKit | `lib/`, npm | 1inch / ENS / World |
 
@@ -60,6 +61,7 @@ market (any taker) ── swap ──► MandateAquaRouter ── 0x2f MandateGa
 
 - **ENSv2.** The permission is a role bit on a name Alice owns in her own `UserRegistry`. Token admin bits cannot be delegated in ENSv2, so the backend holds tier-admin at the registry **root**: it can set tiers but never touch MANDATE. Expiry of the name kills all roles automatically.
 - **World ID.** Without it the agent renews its own permission and decay is theatre. Replay protection is the signed `rp_context` nonce (single-use), not the nullifier, because the same human must be able to come back; the nullifier binds one human to one Vault.
+- **ERC-8004 (not a sponsor, one afternoon).** The agent field takes any address; if it owns an ERC-8004 agent token, the page shows "agent #10531 · Leash demo agent" with a registry link, otherwise "Not in the registry · Leash bounds it anyway". 8004 says *who* an agent is; Leash says *what it may do right now*. The demo agent is registered ([tx](https://sepolia.etherscan.io/tx/0xe6a75a33a4a41a59cc8b4406f6cca1f98ba16c65419d4592e3d90e2bfd660442)); the registration file is an on-chain data URI so nothing depends on our hosting.
 - **1inch Aqua / SwapVM.** The Aqua router ships with no permission instruction at all. `MandateGate` is one, and it answers *how much* rather than yes/no. Gate cost measured against the real ENSv2 registry: **26.6k gas per swap**.
 
 ## Sepolia
