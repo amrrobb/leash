@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Leash — Permission that shrinks on its own</title>
+  <meta name="description" content="Permission for an AI agent that shrinks on its own unless a verified human keeps showing up. ENSv2, World ID and a 1inch SwapVM opcode, live on Sepolia.">
+  <link rel="icon" type="image/png" href="/brand/leash-logo-512-transparent.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" />
+  <link rel="stylesheet" href="/landing-b/styles.css" />
+  <link rel="prefetch" href="/app" />
+</head>
+<body>
+  <!-- ============================== THE FRAME: one composition, first viewport ============================== -->
+  <div class="frame" id="frame">
+
+    <header class="top">
+      <a class="top__brand" href="/" aria-label="Leash">
+        <img class="top__logo" src="/brand/leash-logo-512-transparent.png" alt="" width="24" height="24">
+        <span class="top__wordmark">Leash</span>
+      </a>
+      <a class="top__link" href="#problem">How it works</a>
+      <a class="top__link top__link--demo" href="#demo">The demo</a>
+      <a class="top__link top__link--live" href="#live">Live</a>
+      <button class="top__menu" id="menu-open" type="button" aria-expanded="false" aria-controls="menu" aria-label="Menu">
+        <svg class="icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <line x1="4" y1="6" x2="20" y2="6" /><line x1="4" y1="12" x2="20" y2="12" /><line x1="4" y1="18" x2="20" y2="18" />
+        </svg>
+      </button>
+      <a class="top__cta" href="/app" data-enter>Open the dashboard</a>
+    </header>
+
+    <div class="gutter" aria-hidden="true"></div>
+
+    <section class="hero" aria-labelledby="hero-title">
+      <div class="hero__copy">
+        <p class="badge" id="badge">
+          <i class="badge__dot" aria-hidden="true"></i>
+          <span id="badge-text">CAP DECAYING · HALVES EVERY 24H</span>
+        </p>
+        <h1 class="hero__title" id="hero-title" aria-label="Permission that shrinks on its own">
+          <span class="hero__line hero__line--muted" data-line="Permission that" aria-hidden="true"></span>
+          <span class="hero__line hero__line--ink" data-line="shrinks on its own" aria-hidden="true"></span>
+          <span class="caret" id="caret" aria-hidden="true"></span>
+        </h1>
+        <p class="hero__sub">
+          Give your agent a leash, not a key.<br />
+          Its authority halves every day you’re away and comes back only when a verified human shows up.
+        </p>
+        <div class="hero__actions">
+          <a class="hbtn hbtn--primary" href="/app" data-enter>
+            <span>Open the dashboard</span>
+            <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M5 12h14" /><path d="m12 5 7 7-7 7" />
+            </svg>
+          </a>
+          <a class="hbtn hbtn--ghost" href="#problem">
+            <span>Read how it works</span>
+            <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M12 5v14" /><path d="m5 12 7 7 7-7" />
+            </svg>
+          </a>
+        </div>
+      </div>
+
+      <div class="hero__visual" id="hero-visual" aria-hidden="true" title="Hover: the leash tightens">
+        <video class="visual__layer visual__video" id="hero-video"
+               autoplay muted loop playsinline preload="auto"
+               src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260816_125506_3a597378-ec85-4ebd-bd22-03b45508ac62.mp4"></video>
+        <canvas class="visual__layer visual__trim" id="hero-canvas"></canvas>
+      </div>
+    </section>
+
+    <div class="gutter" aria-hidden="true"></div>
+
+    <section class="features" aria-label="What the leash is made of">
+      <div class="feature feature--intro">
+        <h2>Built for money that an agent runs, not holds.</h2>
+        <p>Set it once. The leash shortens by itself and only a human can lengthen it.</p>
+      </div>
+      <div class="feature">
+        <svg class="feature__icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#16150F" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M20.59 13.41 13.42 20.58a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" /><circle cx="7" cy="7" r="1.5" />
+        </svg>
+        <h3>Permission in ENS</h3>
+        <p>A role bit on <code>&lt;you&gt;.leash.eth</code>. Revocable, readable by anyone.</p>
+      </div>
+      <div class="feature">
+        <svg class="feature__icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#16150F" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="8" r="4" /><path d="M4 21a8 8 0 0 1 16 0" />
+        </svg>
+        <h3>Renewal is human</h3>
+        <p>Only a World ID proof moves the clock. The agent can’t.</p>
+      </div>
+      <div class="feature">
+        <svg class="feature__icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#16150F" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="m17 3 4 4-4 4" /><path d="M21 7H9" /><path d="m7 21-4-4 4-4" /><path d="M3 17h12" />
+        </svg>
+        <h3>Enforced in the swap</h3>
+        <p>A SwapVM opcode trims every trade to the live cap.</p>
+      </div>
+      <div class="feature">
+        <svg class="feature__icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#16150F" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <rect x="3" y="4" width="18" height="16" /><circle cx="12" cy="12" r="3.5" /><path d="M12 8.5V7M12 17v-1.5M8.5 12H7M17 12h-1.5" />
+        </svg>
+        <h3>Funds stay yours</h3>
+        <p>Your vault holds the money. The agent holds permission.</p>
+      </div>
+    </section>
+  </div>
+
+  <!-- ============================== THE STORY (unchanged from /landing) ============================== -->
+  <main class="story" id="story">
+
+    <!-- 01 · The problem -->
+    <section class="chapter" id="problem" data-reveal>
+      <div class="chapter__head">
+        <span class="chapter__num">01</span>
+        <h2 class="chapter__title">Agents hold money now. Every way to give it to them is broken.</h2>
+      </div>
+      <div class="split">
+        <div class="split__col">
+          <p class="eyebrow">Full access</p>
+          <p class="split__lead">One key, one bug, everything gone.</p>
+        </div>
+        <div class="split__col">
+          <p class="eyebrow">Approve every action</p>
+          <p class="split__lead">The human is the bottleneck at 3 a.m.</p>
+        </div>
+      </div>
+      <p class="eyebrow cases__eyebrow">It keeps happening</p>
+      <div class="cases">
+        <article class="case">
+          <p class="case__when">May 2026 · and March 2025, same wallet</p>
+          <h3 class="case__title">Grok × Bankr: an AI agent’s wallet drained by a post on X</h3>
+          <p class="case__text">A prompt hidden in Morse code made the agent move about $150–200k of tokens; the same wallet had lost $330k to the same injection path fourteen months earlier. The agent held full authority over the wallet.</p>
+          <p class="case__leash">With a leash: one trade bounded by the cap, then decay. No human, no renewal.</p>
+        </article>
+        <article class="case">
+          <p class="case__when">November 2024</p>
+          <h3 class="case__title">DEXX: a trading bot that kept the keys</h3>
+          <p class="case__text">About $30M from more than 8,600 wallets. The bot custodied users’ private keys and leaked them; whoever had the key had everything.</p>
+          <p class="case__leash">With a leash: the bot never holds the key. It holds a role the owner can revoke, and the funds stay in the owner’s vault.</p>
+        </article>
+        <article class="case">
+          <p class="case__when">December 2022</p>
+          <h3 class="case__title">3Commas: 100,000 exchange API keys leaked</h3>
+          <p class="case__text">Around $22M traded away from users’ accounts. An API key is all-or-nothing: whoever has it trades as you, with no ceiling and no clock.</p>
+          <p class="case__leash">With a leash: the ceiling is on-chain, shrinks by itself, and only a verified human can raise it.</p>
+        </article>
+        <article class="case">
+          <p class="case__when">September 2024</p>
+          <h3 class="case__title">Banana Gun: outbound transfers nobody asked for</h3>
+          <p class="case__text">About $3M from 11 traders, drained while they used the bot. The bot’s authority over the wallet was unbounded, so one bug was enough.</p>
+          <p class="case__leash">With a leash: the market can take at most the cap per fill, and the agent can only ever close on its own.</p>
+        </article>
+      </div>
+      <p class="cases__note">Figures as reported by SlowMist, the teams involved and the trade press; links in <a href="https://github.com/amrrobb/leash/blob/main/docs/PITCH.md">docs/PITCH.md</a>.</p>
+    </section>
+
+    <!-- 02 · Why Aqua makes it sharp -->
+    <section class="chapter" id="aqua" data-reveal>
+      <div class="chapter__head">
+        <span class="chapter__num">02</span>
+        <h2 class="chapter__title">On Aqua a strategy is immutable, so someone must run the loop.</h2>
+        <p class="chapter__body">There is no “edit position”: <code>dock()</code>, then <code>ship()</code>. Whoever can dock can pull the whole balance.</p>
+      </div>
+      <figure class="fig fig--loop" aria-label="The dock and ship loop. Whoever runs the loop can pull the whole balance.">
+        <svg viewBox="0 0 420 200" class="loop" role="img">
+          <title>dock() then ship(): the loop someone has to run</title>
+          <rect x="20" y="70" width="140" height="60" rx="10" class="loop__box"/>
+          <text x="90" y="96" class="loop__label" text-anchor="middle">position</text>
+          <text x="90" y="116" class="loop__sub" text-anchor="middle">HYPE / USDC on Aqua</text>
+          <rect x="260" y="70" width="140" height="60" rx="10" class="loop__box"/>
+          <text x="330" y="96" class="loop__label" text-anchor="middle">whoever runs</text>
+          <text x="330" y="116" class="loop__sub" text-anchor="middle">the loop</text>
+          <path d="M160 88 C 200 40, 220 40, 260 88" class="loop__arc"/>
+          <path d="M260 112 C 220 160, 200 160, 160 112" class="loop__arc"/>
+          <text x="210" y="46" class="loop__code" text-anchor="middle">dock()</text>
+          <text x="210" y="168" class="loop__code" text-anchor="middle">ship()</text>
+          <path d="M254 84 l6 4 -6 4" class="loop__arrow"/>
+          <path d="M166 116 l-6 -4 6 -4" class="loop__arrow"/>
+        </svg>
+        <figcaption>All or nothing: that is what you hand a bot today.</figcaption>
+      </figure>
+    </section>
+
+    <!-- 03 · The idea -->
+    <section class="chapter chapter--wide" id="idea" data-reveal>
+      <div class="chapter__head">
+        <span class="chapter__num">03</span>
+        <h2 class="chapter__title">Decay, not expiry. Expiry is a cliff; decay is a slope.</h2>
+        <p class="chapter__body">The cap halves every 24 hours since a verified human last showed up, and is cut to zero at 72.</p>
+      </div>
+
+      <div class="decay" id="decay">
+        <div class="decay__chart">
+          <div class="decay__readout">
+            <span class="eyebrow">Authority remaining</span>
+            <span class="decay__num mono" id="decay-num">15,000</span>
+            <span class="decay__unit">USDC · <span id="decay-hours">0h</span> since last proof</span>
+          </div>
+          <svg viewBox="0 0 640 260" class="decay__svg" role="img" aria-labelledby="decay-title">
+            <title id="decay-title">The cap halves every 24 hours and is cut to zero at 72 hours. A human proof resets it to the top.</title>
+            <line x1="60" y1="20" x2="60" y2="220" class="ax"/>
+            <line x1="60" y1="220" x2="620" y2="220" class="ax"/>
+            <line x1="60" y1="120" x2="620" y2="120" class="grid"/>
+            <line x1="60" y1="170" x2="620" y2="170" class="grid"/>
+            <line x1="60" y1="195" x2="620" y2="195" class="grid"/>
+            <text x="52" y="24" class="tick" text-anchor="end">15,000</text>
+            <text x="52" y="124" class="tick" text-anchor="end">7,500</text>
+            <text x="52" y="174" class="tick" text-anchor="end">3,750</text>
+            <text x="52" y="224" class="tick" text-anchor="end">0</text>
+            <line x1="240" y1="20" x2="240" y2="220" class="grid grid--v"/>
+            <line x1="420" y1="20" x2="420" y2="220" class="grid grid--v"/>
+            <line x1="600" y1="20" x2="600" y2="220" class="grid grid--v grid--cut"/>
+            <text x="60" y="244" class="tick">0h</text>
+            <text x="240" y="244" class="tick" text-anchor="middle">24h</text>
+            <text x="420" y="244" class="tick" text-anchor="middle">48h</text>
+            <text x="600" y="244" class="tick" text-anchor="middle">72h · cutoff</text>
+            <path d="M60 20 H600 V220" class="cliff"/>
+            <text x="470" y="40" class="tick tick--muted">expiry: a cliff</text>
+            <path d="M60 20 L240 120 L420 170 L600 195 V220" class="curve"/>
+            <path id="decay-progress" d="" class="curve curve--live"/>
+            <circle id="decay-dot" cx="60" cy="20" r="5" class="dot"/>
+            <g id="decay-scan" class="scan" opacity="0">
+              <line x1="60" y1="20" x2="60" y2="220" class="scan__line"/>
+              <text x="68" y="60" class="scan__label">human scans → back to the top</text>
+            </g>
+          </svg>
+          <div class="decay__legend">
+            <span class="legend"><i class="legend__swatch legend__swatch--accent"></i>Leash: halves every 24h</span>
+            <span class="legend"><i class="legend__swatch legend__swatch--dash"></i>Expiry, for comparison</span>
+          </div>
+        </div>
+
+        <div class="decay__side">
+          <p class="eyebrow">The leash, live</p>
+          <pre class="wave" id="idea-wave" data-tone="ok"></pre>
+          <dl class="facts">
+            <div class="facts__row"><dt>Status</dt><dd id="decay-status" class="pill pill--ok"><i></i>Operating</dd></div>
+            <div class="facts__row"><dt>Open new ranges</dt><dd id="decay-open" class="mono">Allowed</dd></div>
+            <div class="facts__row"><dt>Close positions</dt><dd class="mono accent">Always</dd></div>
+          </dl>
+          <button type="button" class="btn btn--ghost" id="decay-scan-btn">Human scans with World ID</button>
+          <p class="decay__note">Big trades shrink first. At zero the agent can still close.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 04 · How it's built -->
+    <section class="chapter chapter--wide" id="built" data-reveal>
+      <div class="chapter__head">
+        <span class="chapter__num">04</span>
+        <h2 class="chapter__title">How it’s built: three lanes, three sponsors.</h2>
+        <p class="chapter__body">ENS holds the permission. World makes renewal human-only. A SwapVM opcode enforces the cap inside every trade.</p>
+      </div>
+      <div class="lanes" id="lanes">
+        <div class="lanes__scroll">
+          <svg class="lanes__svg" id="lanes-svg" viewBox="0 0 960 340" role="group" aria-label="Three lanes: permission, money, enforcement. Select a lane to read one sentence about it."></svg>
+        </div>
+        <p class="lanes__caption" id="lanes-caption" aria-live="polite">Hover or tap a lane.</p>
+      </div>
+      <ul class="lines">
+        <li><span>Close positions</span><span class="accent mono">Always</span></li>
+        <li><span>Open new ranges</span><span class="mono">only while the leash is alive</span></li>
+        <li class="lines__note">Your funds sit in your own vault. The agent holds permission, not money, and only you can withdraw.</li>
+      </ul>
+    </section>
+
+    <!-- 05 · The opcode -->
+    <section class="chapter chapter--wide" id="opcode" data-reveal>
+      <div class="chapter__head">
+        <span class="chapter__num">05</span>
+        <h2 class="chapter__title">Not a UI rule: a SwapVM opcode inside every quote and swap.</h2>
+        <p class="chapter__body">Read the mandate, revert if revoked or empty, trim the USDC leg. Guards say yes or no; this says how much.</p>
+      </div>
+      <div class="pair pair--code">
+        <figure class="code">
+          <figcaption class="code__cap"><span>src/MandateGate.sol · opcode <span class="mono">0x2f</span></span><span class="mono">26.6k gas per swap</span></figcaption>
+<pre class="mono"><code>(bool alive, uint256 limit, address capToken) =
+    IMandateVault(maker).mandate();
+<span class="hl">require(alive, MandateRevoked(maker));</span>
+<span class="hl">require(limit &gt; 0, MandateEmpty(maker));</span>
+
+if (ctx.query.tokenIn == capToken) {
+<span class="hl">    if (ctx.swap.amountIn &gt; limit) ctx.swap.amountIn = limit;</span>
+} else if (ctx.query.tokenOut == capToken) {
+<span class="hl">    if (ctx.swap.amountOut &gt; limit) ctx.swap.amountOut = limit;</span>
+} else revert MandateTokenMissing(maker, capToken);</code></pre>
+        </figure>
+
+        <figure class="trim" aria-label="A trimmed trade: the market asked for 10,000 USDC and was allowed 7,500.">
+          <p class="eyebrow">A trimmed trade, on Sepolia</p>
+          <div class="trim__row">
+            <span class="trim__label">Asked</span>
+            <div class="trim__track"><div class="trim__bar trim__bar--asked" style="--w:100%"></div></div>
+            <span class="trim__val mono">10,000</span>
+          </div>
+          <div class="trim__row">
+            <span class="trim__label">Allowed</span>
+            <div class="trim__track"><div class="trim__bar trim__bar--allowed" style="--w:75%"></div><span class="trim__cut" style="--w:75%"></span></div>
+            <span class="trim__val mono trim__val--ochre">7,500</span>
+          </div>
+          <div class="trim__feed">
+            <span class="pill pill--trim"><i></i>Trimmed</span>
+            <span>Asked 10,000 · allowed 7,500 · at 24 demo-hours</span>
+          </div>
+          <figcaption>Trim, don’t revert: the taker gets what is allowed.</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <!-- 06 · The demo, step by step -->
+    <section class="chapter chapter--wide" id="demo" data-reveal>
+      <div class="chapter__head">
+        <span class="chapter__num">06</span>
+        <h2 class="chapter__title">The demo, step by step, on Sepolia.</h2>
+      </div>
+      <div class="stepper" id="stepper" tabindex="0" aria-label="Demo flow. Use the arrow keys or the buttons to step through.">
+        <ol class="stepper__list" id="step-list"></ol>
+        <div class="stepper__stage">
+          <div class="screen">
+            <div class="screen__head">
+              <span class="eyebrow">Authority remaining</span>
+              <span class="pill" id="step-pill"><i></i>Operating</span>
+            </div>
+            <div class="screen__num"><span class="mono" id="step-cap">15,000</span><span class="screen__unit">USDC</span></div>
+            <div class="screen__bar"><div class="screen__fill" id="step-fill"></div></div>
+            <pre class="wave wave--small" id="step-wave" data-tone="ok"></pre>
+            <div class="screen__perm">
+              <span>Close positions</span><span class="accent mono">Always</span>
+              <span>Open new ranges</span><span class="mono" id="step-open">Allowed</span>
+            </div>
+            <div class="screen__feed mono" id="step-feed">Agent opened HYPE/USDC · Operating</div>
+          </div>
+          <div class="stepper__copy">
+            <p class="eyebrow"><span id="step-idx">1</span> / 9</p>
+            <h3 class="stepper__title" id="step-title"></h3>
+            <p class="stepper__text" id="step-text"></p>
+            <div class="stepper__nav">
+              <button type="button" class="btn btn--ghost" id="step-prev" aria-label="Previous step">← Back</button>
+              <button type="button" class="btn" id="step-next" aria-label="Next step">Next →</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 07 · What each sponsor gave -->
+    <section class="chapter" id="sponsors" data-reveal>
+      <div class="chapter__head">
+        <span class="chapter__num">07</span>
+        <h2 class="chapter__title">Three sponsors, each load-bearing.</h2>
+      </div>
+      <dl class="gave">
+        <div class="gave__col">
+          <dt><span class="pill pill--pause">ENSv2</span></dt>
+          <dd><span>Holds the permission</span><span>Role bit in your own UserRegistry</span></dd>
+          <dd><span>Backend can’t touch MANDATE</span><span>Tier-admin at the registry root only</span></dd>
+          <dd><span>Name expiry</span><span>Kills every role automatically</span></dd>
+        </div>
+        <div class="gave__col">
+          <dt><span class="pill pill--pause">World ID</span></dt>
+          <dd><span>Renewal is human-only</span><span>Otherwise decay is theatre</span></dd>
+          <dd><span>Replay protection</span><span>Single-use signed nonce, not the nullifier</span></dd>
+          <dd><span>One human per vault</span><span>Nullifier binds them</span></dd>
+        </div>
+        <div class="gave__col">
+          <dt><span class="pill pill--pause">1inch Aqua · SwapVM</span></dt>
+          <dd><span>Enforced inside the trade</span><span>Opcode 0x2f, quotes and swaps</span></dd>
+          <dd><span>Says how much</span><span>Built-in guards say yes or no</span></dd>
+          <dd><span>Engine unchanged</span><span>XYCSwap, Aqua, taker traits are 1inch’s</span></dd>
+        </div>
+      </dl>
+    </section>
+
+    <!-- 08 · Numbers -->
+    <section class="chapter" id="numbers" data-reveal>
+      <div class="chapter__head">
+        <span class="chapter__num">08</span>
+        <h2 class="chapter__title">Numbers, measured on Sepolia.</h2>
+      </div>
+      <dl class="stats">
+        <div class="stat"><dt>Gate cost per swap</dt><dd class="mono">26.6k <span>gas</span></dd></div>
+        <div class="stat"><dt>Ask trimmed on-chain</dt><dd class="mono">10,000 → 7,500</dd></div>
+        <div class="stat"><dt>Zero at</dt><dd class="mono">72 <span>demo-hours</span></dd></div>
+        <div class="stat"><dt>Halves every</dt><dd class="mono">24 <span>hours</span></dd></div>
+        <div class="stat"><dt>Router size</dt><dd class="mono">22,509 <span>B</span></dd></div>
+        <div class="stat"><dt>Tests · 71 + 27 + 57 + 17</dt><dd class="mono">172</dd></div>
+      </dl>
+      <p class="chapter__foot">Every guard was checked by breaking it and watching a test fail.</p>
+    </section>
+
+    <!-- 09 · Live -->
+    <section class="chapter" id="live" data-reveal>
+      <div class="chapter__head">
+        <span class="chapter__num">09</span>
+        <h2 class="chapter__title">Live now: the demo vault, read from Sepolia.</h2>
+      </div>
+      <div class="live" id="live-panel" data-state="static">
+        <div class="live__main">
+          <span class="eyebrow">Authority remaining</span>
+          <div class="live__num"><span class="mono" id="live-cap">—</span><span class="live__unit">USDC</span></div>
+          <span class="pill" id="live-pill"><i></i><span id="live-pill-text">Reading the chain</span></span>
+        </div>
+        <dl class="live__facts">
+          <div class="facts__row"><dt>Agent</dt><dd class="mono" id="live-agent">agent.leash.eth</dd></div>
+          <div class="facts__row"><dt>Mandate</dt><dd class="mono" id="live-alive">—</dd></div>
+          <div class="facts__row"><dt>In the vault</dt><dd class="mono" id="live-bal">—</dd></div>
+          <div class="facts__row"><dt>Vault</dt><dd class="mono" id="live-vault">0x4795…C2B9</dd></div>
+        </dl>
+        <a class="btn" id="live-link" href="/app" data-enter>Open this vault in the dashboard</a>
+      </div>
+    </section>
+
+    <!-- 10 · Try it -->
+    <section class="chapter" id="try" data-reveal>
+      <div class="chapter__head">
+        <span class="chapter__num">10</span>
+        <h2 class="chapter__title">Try it with your wallet.</h2>
+      </div>
+      <ol class="steps">
+        <li><span class="steps__n mono">1</span><div><strong>Connect wallet</strong><span>Any wallet on Sepolia</span></div></li>
+        <li><span class="steps__n mono">2</span><div><strong>Create your vault</strong><span>One transaction: vault + <code>&lt;name&gt;.leash.eth</code> + mandate</span></div></li>
+        <li><span class="steps__n mono">3</span><div><strong>Verify with World</strong><span>The credential sets the ceiling</span></div></li>
+        <li><span class="steps__n mono">4</span><div><strong>Deposit</strong><span>Into your own vault</span></div></li>
+        <li><span class="steps__n mono">5</span><div><strong>Set a cap</strong><span>At or under your tier</span></div></li>
+      </ol>
+      <div class="try__cta">
+        <a class="cta" href="/app" data-enter>
+          <span class="cta__label">Open the dashboard</span>
+          <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M5 12h14" /><path d="m12 5 7 7-7 7" />
+          </svg>
+        </a>
+        <p class="try__note">Someone else’s vault refuses your scan: it already has its human.</p>
+      </div>
+      <div class="next">
+        <p class="eyebrow">Where it goes</p>
+        <p>A cumulative budget in the Vault, more curves, and any recurring authority that should die when the human stops showing up.</p>
+      </div>
+    </section>
+
+    <footer class="foot">
+      <div class="foot__row">
+        <a class="nav__brand foot__brand" href="/"><img class="nav__logo" src="/brand/leash-logo-512-transparent.png" alt="" width="22" height="22"><span>Leash</span></a>
+        <span class="foot__meta">Built solo at ETHGlobal Tokyo 2026 · From Scratch track · Sepolia</span>
+      </div>
+      <div class="foot__row foot__links">
+        <a href="https://github.com/amrrobb/leash">GitHub</a>
+        <a href="https://github.com/amrrobb/leash/blob/main/docs/INTEGRATION.md">How it works</a>
+        <a href="https://github.com/amrrobb/leash/blob/main/docs/AGENT.md">The agent</a>
+        <a href="https://github.com/amrrobb/leash/blob/main/NOTES.md">Integration notes</a>
+        <span class="foot__meta">Powered by SwapVM — © Degensoft Ltd 2025</span>
+      </div>
+    </footer>
+  </main>
+
+  <div class="menu" id="menu">
+    <div class="menu__backdrop" id="menu-backdrop"></div>
+    <div class="menu__panel" role="dialog" aria-modal="true" aria-label="Menu">
+      <button class="menu__close" id="menu-close" type="button">
+        <svg class="icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M18 6 6 18" /><path d="m6 6 12 12" />
+        </svg>
+        <span>Close</span>
+      </button>
+      <nav class="menu__nav">
+        <a class="menu__link" href="/app" data-enter><span class="menu__linkText">Dashboard</span><svg class="menu__arrow icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14" /><path d="m12 5 7 7-7 7" /></svg></a>
+        <a class="menu__link" href="#idea"><span class="menu__linkText">The idea</span><svg class="menu__arrow icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14" /><path d="m12 5 7 7-7 7" /></svg></a>
+        <a class="menu__link" href="#demo"><span class="menu__linkText">The demo</span><svg class="menu__arrow icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14" /><path d="m12 5 7 7-7 7" /></svg></a>
+        <a class="menu__link" href="#live"><span class="menu__linkText">Live</span><svg class="menu__arrow icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14" /><path d="m12 5 7 7-7 7" /></svg></a>
+        <a class="menu__link" href="https://github.com/amrrobb/leash"><span class="menu__linkText">GitHub</span><svg class="menu__arrow icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14" /><path d="m12 5 7 7-7 7" /></svg></a>
+      </nav>
+      <div class="menu__foot">
+        <span class="menu__footLabel">Built at ETHGlobal Tokyo 2026</span>
+        <a class="menu__mail" href="https://github.com/amrrobb/leash">github.com/amrrobb/leash</a>
+      </div>
+    </div>
+  </div>
+
+  <script src="/leash-wave.js"></script>
+  <script type="module" src="/landing-b/ui.js"></script>
+  <script type="module" src="/landing-b/hero.js"></script>
+  <script type="module" src="/landing-b/story.js"></script>
+</body>
+</html>
