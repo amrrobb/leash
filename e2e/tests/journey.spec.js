@@ -104,7 +104,7 @@ test.describe.serial("Leash journey on a Sepolia fork", () => {
     agent("ship");
     await expect(page.getByTestId("feed")).toContainText("Agent opened a range");
     const out = agent("trade", { AMOUNT: "10000000000" });
-    const filled = Number(out.match(/filled \(USDC\) (\d+)/)[1]) / 1e6;
+    const filled = Number(out.match(/simulated fill \(USDC\) (\d+)/)[1]) / 1e6; // pre-broadcast figure; the feed shows the mined one
     expect(filled).toBeGreaterThan(1_800);
     expect(filled).toBeLessThanOrEqual(2_000);
     const row = page.locator('[data-kind="trim"]').first();
