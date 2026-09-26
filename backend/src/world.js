@@ -31,9 +31,11 @@ export function strongestCredential(result) {
 
 /** Forwards the IDKit completion result untouched to the Developer Portal. Throws on rejection. */
 export async function verifyWithPortal(result, world, fetchImpl = fetch) {
+  const headers = { "Content-Type": "application/json" };
+  if (world.stagingToken) headers["x-staging-verification-token"] = world.stagingToken;
   const res = await fetchImpl(`${world.verifyUrl}/${world.rpId}`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers,
     body: JSON.stringify(result),
   });
   let body = {};

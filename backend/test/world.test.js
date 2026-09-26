@@ -41,6 +41,15 @@ test("the result is forwarded untouched to /verify/{rp_id}", async () => {
   assert.deepEqual(JSON.parse(seen.init.body), result);
 });
 
+test("staging proofs carry the portal's staging token; production calls do not", async () => {
+  const seen = [];
+  const fakeFetch = async (_url, init) => (seen.push(init.headers), new Response(JSON.stringify({ success: true })));
+  await verifyWithPortal({}, { ...world, stagingToken: "stg_123" }, fakeFetch);
+  await verifyWithPortal({}, world, fakeFetch);
+  assert.equal(seen[0]["x-staging-verification-token"], "stg_123");
+  assert.equal("x-staging-verification-token" in seen[1], false);
+});
+
 test("portal rejection throws with status 400", async () => {
   const fakeFetch = async () => new Response(JSON.stringify({ success: false, code: "invalid_proof" }), { status: 400 });
   await assert.rejects(verifyWithPortal({}, world, fakeFetch), (e) => e.status === 400 && /invalid_proof/.test(e.message));

@@ -21,6 +21,9 @@ export function loadConfig(env = process.env) {
       action: env.WORLD_ACTION ?? "leash-verify",
       verifyUrl: env.WORLD_VERIFY_URL ?? "https://developer.worldcoin.org/api/v4/verify",
       environment: env.WORLD_ENVIRONMENT ?? "staging",
+      // Staging proofs (World simulator) verify only inside a window opened on the portal, and every
+      // verify call must carry its token. Unset for production proofs from a real World App.
+      stagingToken: env.WORLD_STAGING_TOKEN,
     },
   };
 }
