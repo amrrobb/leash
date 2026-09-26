@@ -100,14 +100,15 @@ test("a second human cannot renew Alice's vault", async () => {
   assert.deepEqual(calls, []);
 });
 
-test("one human cannot back a second Vault", async () => {
+test("one human may back a second Vault of their own; the binding is per vault", async () => {
   await handleProof({ result: freshResult("selfie", "0xalice"), world, store, chain, vault: VAULT, fetchImpl: okPortal });
   calls = [];
-  await assert.rejects(
-    handleProof({ result: freshResult("selfie", "0xalice"), world, store, chain, vault: "0x00000000000000000000000000000000000000B2", fetchImpl: okPortal }),
-    (e) => e.status === 409,
-  );
-  assert.deepEqual(calls, []);
+  const second = "0x00000000000000000000000000000000000000B2";
+  const out = await handleProof({ result: freshResult("selfie", "0xalice"), world, store, chain, vault: second, fetchImpl: okPortal });
+  assert.equal(out.tier, "selfie");
+  assert.equal(calls.length, 2, "tier grant + verify on the second vault");
+  // ...but a different human still cannot renew either of them.
+  await assert.rejects(handleProof({ result: freshResult("selfie", "0xbob"), world, store, chain, vault: second, fetchImpl: okPortal }), (e) => e.status === 409);
 });
 
 test("wrong action and legacy proofs are rejected", async () => {
