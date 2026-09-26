@@ -22,7 +22,8 @@
   --pause-bar: #C9C4B5;
   --mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
   /* the source video is a grey iridescent sphere; this pulls it into the Leash green */
-  --tint: sepia(0.28) hue-rotate(78deg) saturate(1.05) brightness(1.02);
+  --tint: sepia(0.28) hue-rotate(78deg) saturate(1.45) contrast(1.18) brightness(1.0);
+  --logo-mask: url(/brand/leash-logo-512-transparent.png) 52% 48% / auto 66vh no-repeat;
 }
 
 *, *::before, *::after { box-sizing: border-box; }
@@ -56,7 +57,10 @@ code { font-family: var(--mono); font-size: 0.92em; background: var(--pause-tint
   opacity: 1;
   pointer-events: none;
   filter: var(--tint);
+  /* The video plays only inside the logo's silhouette: the rings and the dot become liquid glass on paper. */
+  -webkit-mask: var(--logo-mask); mask: var(--logo-mask);
 }
+#dup-image { -webkit-mask: var(--logo-mask); mask: var(--logo-mask); }
 .glass-defs { position: absolute; width: 0; height: 0; pointer-events: none; }
 
 /* ---------- hero shell ---------- */
@@ -178,7 +182,7 @@ code { font-family: var(--mono); font-size: 0.92em; background: var(--pause-tint
 .finding__val--trim { color: var(--trim-ink); }
 .finding__text { margin-top: 3px; font-size: 13px; line-height: 1.5; color: var(--ink-60); }
 .card__wave { display: block; width: 100%; height: auto; margin-top: 1.25rem; color: var(--accent); }
-@media (max-width: 639.98px) { .card { height: auto; min-height: 360px; padding: 1.5rem; } .hero-bottom { gap: 1rem; } }
+@media (max-width: 639.98px) { .card { height: auto; min-height: 360px; padding: 1.5rem; } .hero-bottom { gap: 1rem; } :root { --logo-mask: url(/brand/leash-logo-512-transparent.png) center 64% / 84vw auto no-repeat; } }
 @media (min-width: 768px) { .card__wave { margin-top: 1.5rem; } }
 
 /* ============================== THE STORY ============================== */
