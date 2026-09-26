@@ -83,6 +83,9 @@ Yes, repeatedly, and always the same shape: software holding unbounded authority
 - **Banana Gun, September 2024**: ~$3M from 11 traders through the Telegram bot's message oracle. Sources: [QuillAudits](https://www.quillaudits.com/blog/hack-analysis/banana-gun-exploit), [Cryptonews](https://cryptonews.com/news/telegram-bot-banana-gun-to-refund-3-million-hack-victims/).
 The one-liner: *every one of these bots held the key. Leash gives the bot a leash instead, and the money never leaves the owner's vault.*
 
+**"MetaMask's ERC-7715 permissions already do spend limits. What's new?"**
+Three things they don't do: the limit *decays* instead of expiring (a cliff strands an open Aqua position); renewal needs a *present human* (a signature can be produced by the agent, a World proof can't); and it's enforced *inside the swap* by a SwapVM instruction, so a bot calling the router directly is still bounded. Plus the permission is a public ENS role, not a private signed blob. The obvious next step is a "leash caveat" inside a 7715 delegation. See docs/MARKET.md.
+
 ### The hard one
 
 **"The cap is per trade. Can't many small trades drain the position?"**

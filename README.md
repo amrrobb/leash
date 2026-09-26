@@ -103,6 +103,7 @@ Every guard in the contracts and backend was checked by breaking it and watching
 - [docs/INTEGRATION.md](docs/INTEGRATION.md) — the seams between ENS, World and Aqua, and every change from the pre-event plan
 - [docs/SETUP.md](docs/SETUP.md) — environment, deploy, World portal, run, test
 - [docs/UI-SPEC.md](docs/UI-SPEC.md) — every screen, copy, data and hooks
+- [docs/MARKET.md](docs/MARKET.md) — the landscape (ERC-7715, Coinbase agent wallets, Safe modules, session keys) and what Leash does that they don't
 - [NOTES.md](NOTES.md) — the integration log: every friction with dates, for the sponsor debriefs
 - [ROADMAP.md](ROADMAP.md) — what was built in what order
 
