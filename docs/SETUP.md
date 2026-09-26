@@ -102,6 +102,14 @@ DEPLOYMENT=deployments/sepolia.json SALT=1 ACTION=trade TAKER_KEY=$TAKER_KEY AMO
 DEPLOYMENT=deployments/sepolia.json SALT=1 ACTION=dock  AGENT_KEY=$AGENT_KEY forge script script/Agent.s.sol --rpc-url $SEPOLIA_RPC --broadcast
 ```
 
+Or let the agent run on its own (this is what the demo video shows), with the market as a second process:
+```bash
+(cd agent && npm ci)
+cd agent && AGENT_KEY=$AGENT_KEY node loop.mjs          # opens, re-ranges, is refused at zero, closes, resumes
+cd agent && TAKER_KEY=$TAKER_KEY node market.mjs        # random 1,500–12,000 USDC trades every ~40 s
+```
+`agent/policy.json` holds the agent's own choices (pairs, sizes, re-range interval, poll interval). The loop reports refused attempts to the dashboard through `POST /api/agent/event` (loopback-only, or `x-demo-token`). See [AGENT.md](AGENT.md) for the use case and the loop's rules.
+
 ## 7. Test
 
 ```bash
