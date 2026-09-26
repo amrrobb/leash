@@ -139,3 +139,26 @@ test("GET /api/deployment carries the tier policy read from the chain", async ()
   assert.deepEqual(d.policy.tiers, { orb: "15000000000", document: "7500000000", selfie: "2000000000" });
 });
 
+
+test("POST /api/simulate-human hands a staging link to World's simulator; refused outside staging or for non-staging links", async () => {
+  const calls = [];
+  const sim = async (url, init) => {
+    calls.push(JSON.parse(init.body).params.arguments.connect_url);
+    return new Response(JSON.stringify({ result: { structuredContent: { status: "proof_delivered", request_id: "r1" } } }), { status: 200 });
+  };
+  const srv = createApp({ config, store: openStore(join(dir, "s.db")), chain, staticDir, fetchImpl: sim }).listen(0);
+  const b = `http://127.0.0.1:${srv.address().port}`;
+  let r = await post(`${b}/api/simulate-human`, { connect_url: "https://staging.world.org/verify?t=wld&i=abc" });
+  assert.equal(r.status, 200);
+  assert.deepEqual(await r.json(), { delivered: true, request_id: "r1" });
+  assert.deepEqual(calls, ["https://staging.world.org/verify?t=wld&i=abc"]);
+  r = await post(`${b}/api/simulate-human`, { connect_url: "https://world.org/verify?t=wld&i=abc" }); // production link
+  assert.equal(r.status, 400);
+  srv.close();
+  // Production backends never expose it.
+  const prod = createApp({ config: { ...config, world: { ...world, environment: "production" } }, store: openStore(join(dir, "p.db")), chain, staticDir, fetchImpl: sim }).listen(0);
+  r = await post(`http://127.0.0.1:${prod.address().port}/api/simulate-human`, { connect_url: "https://staging.world.org/verify?t=wld&i=abc" });
+  assert.equal(r.status, 403);
+  assert.equal(calls.length, 1);
+  prod.close();
+});

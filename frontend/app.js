@@ -582,6 +582,8 @@ if (typeof document !== "undefined") {
     setErr("vm-err", null);
     $("vm-link").hidden = true;
     $("vm-legacy").hidden = true;
+    $("vm-simulate").hidden = true;
+    $("vm-simulate").disabled = false;
     $("vm-title").textContent = "Scan with World App";
     $("vm-text").textContent = "Pick a credential in the app. It sets how much authority the agent gets.";
     $("qr").innerHTML = '<span class="quiet">Preparing…</span>';
@@ -607,6 +609,13 @@ if (typeof document !== "undefined") {
         const request = preset ? await builder.preset(IDKit[preset]()) : single ? await builder.preset(IDKit[single]()) : await builder.constraints(constraintsFor(IDKit, ctx.credentials));
         if (mine !== attempt) return;
         drawQR(request.connectorURI);
+        // Staging: World's simulator can play the human from the page itself (no phone on stage).
+        $("vm-simulate").hidden = ctx.environment !== "staging";
+        $("vm-simulate").onclick = async (e) => {
+          e.currentTarget.disabled = true;
+          try { await api("/api/simulate-human", { connect_url: request.connectorURI }); }
+          catch (err) { setErr("vm-err", err.message); e.currentTarget.disabled = false; }
+        };
         completion = await request.pollUntilCompletion({ pollInterval: 2000, timeout: 420_000 });
         if (mine !== attempt) return; // cancelled while waiting: ignore the result, send nothing
         if (!completion.success && completion.error === "world_id_4_not_available" && !preset && ctx.allow_legacy_proofs === true) {

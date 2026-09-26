@@ -78,6 +78,23 @@ export function createApp(deps) {
       return chain.buildTx(kind, p);
     },
     "POST /api/rp-context": async () => issueRpContext({ world: config.world, store }),
+    /** Staging only: World's simulator plays the human for a request the page just made (no phone on stage).
+     * The proof still travels World's bridge and is verified with World's portal like any other. */
+    "POST /api/simulate-human": async (body) => {
+      if (config.world.environment !== "staging") throw bad("the simulator answers staging requests only", 403);
+      const url = String(body?.connect_url ?? "");
+      if (!url.startsWith("https://staging.world.org/")) throw bad("connect_url must be a staging World link");
+      const res = await (deps.fetchImpl ?? fetch)("https://simulator.worldcoin.org/api/mcp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Accept: "application/json, text/event-stream" },
+        body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "tools/call", params: { name: "complete_test_request", arguments: { connect_url: url } } }),
+      });
+      const text = await res.text();
+      let out = {};
+      try { const j = JSON.parse(text.slice(text.indexOf("{"))); out = j.result?.structuredContent ?? JSON.parse(j.result?.content?.[0]?.text ?? "{}"); } catch { throw bad(`simulator answered ${res.status}`, 502); }
+      if (out.status !== "proof_delivered") throw bad(`simulator refused: ${out.error ?? JSON.stringify(out)}`, 502);
+      return { delivered: true, request_id: out.request_id };
+    },
     "POST /api/proof": async (body) =>
       handleProof({ result: body?.result, vault: body?.vault, world: config.world, store, chain, fetchImpl: deps.fetchImpl }),
     // The agent reports what it tried; a refused ship reverts and leaves nothing on chain otherwise.
