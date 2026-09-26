@@ -247,6 +247,17 @@ test.describe.serial("Leash journey on a Sepolia fork: any wallet, its own vault
     expect(usd(s.cap)).toBeGreaterThan(0);
   });
 
+  test("Switching accounts inside the wallet: the page follows without a reload", async () => {
+    await expect(page.getByTestId("revoke")).toBeVisible();
+    await page.evaluate((next) => window.ethereum.__switchAccount(next), keys.addr.taker); // a wallet with no vault
+    await expect(page.getByTestId("viewer-note")).toBeVisible();
+    await expect(page.getByTestId("revoke")).toBeHidden();
+    await expect(page.getByTestId("owner-name")).toContainText(keys.addr.taker.slice(0, 6));
+    await page.evaluate((next) => window.ethereum.__switchAccount(next), keys.addr.alice);
+    await expect(page.getByTestId("viewer-note")).toBeHidden();
+    await expect(page.getByTestId("revoke")).toBeVisible();
+  });
+
   test("A visitor without a wallet sees the vault read-only", async ({ browser }) => {
     const visitor = await browser.newPage();
     await visitor.goto(`/app?vault=${vault}`);

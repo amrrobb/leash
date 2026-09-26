@@ -339,6 +339,22 @@ if (typeof document !== "undefined") {
     }
   }
   $("connect-wallet").addEventListener("click", connect);
+
+  // The wallet can switch accounts or chains behind the page. Follow it: a new account that owns a vault goes
+  // to its vault; one that does not keeps looking at the current vault as a visitor (or lands on Create).
+  async function adoptAccount(accounts) {
+    const next = accounts?.[0] ?? null;
+    if ((next ?? "").toLowerCase() === (session.account ?? "").toLowerCase()) return;
+    session.account = next;
+    try { if (next) localStorage.setItem("leash.account", next); else localStorage.removeItem("leash.account"); } catch {}
+    if (next) {
+      const { vault } = await api(`/api/vault?owner=${next}`).catch(() => ({}));
+      if (vault && vault !== ZERO) { session.vault = vault; history.replaceState(null, "", `/app?vault=${vault}`); }
+    }
+    await poll();
+  }
+  wallet.provider?.on?.("accountsChanged", (a) => adoptAccount(a).catch((err) => setErr("dash-err", err.message)));
+  wallet.provider?.on?.("chainChanged", () => location.reload());
   $("owner-name").addEventListener("click", () => { if (!session.account) connect(); });
 
   $("use-demo-agent").addEventListener("click", () => {

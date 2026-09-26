@@ -9,8 +9,13 @@
     if (!r.ok) throw new Error(j.error ?? `HTTP ${r.status}`);
     return j;
   };
+  const listeners = {};
   window.ethereum = {
     isFakeWallet: true,
+    on(event, fn) { (listeners[event] ??= []).push(fn); },
+    removeListener(event, fn) { listeners[event] = (listeners[event] ?? []).filter((f) => f !== fn); },
+    /** Test hook: the user switches accounts inside the wallet. */
+    __switchAccount(next) { account = next; for (const fn of listeners.accountsChanged ?? []) fn(next ? [next] : []); },
     async request({ method, params }) {
       switch (method) {
         case "eth_requestAccounts":
