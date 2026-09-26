@@ -547,7 +547,12 @@ if (typeof document !== "undefined") {
         const b = document.createElement("button");
         b.className = "wallet-row"; b.type = "button"; b.dataset.testid = `legacy-${preset}`;
         b.append(name, Object.assign(document.createElement("span"), { className: "mono quiet", textContent: cap, style: "margin-left:auto" }));
-        b.addEventListener("click", () => { box.hidden = true; resolve(preset); });
+        b.addEventListener("click", () => {
+          box.hidden = true;
+          $("vm-text").textContent = `Scan again: this QR asks World App for ${name} only.`;
+          $("qr").innerHTML = '<span class="quiet">Preparing…</span>';
+          resolve(preset);
+        });
         return b;
       }));
       box.hidden = false;
