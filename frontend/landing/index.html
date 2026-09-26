@@ -146,18 +146,16 @@
     <section class="chapter" id="problem" data-reveal>
       <div class="chapter__head">
         <span class="chapter__num">01</span>
-        <h2 class="chapter__title">Agents are starting to hold money. Every way to give them that today is broken in one of two directions.</h2>
+        <h2 class="chapter__title">Agents hold money now. Every way to give it to them is broken.</h2>
       </div>
       <div class="split">
         <div class="split__col">
           <p class="eyebrow">Full access</p>
-          <p class="split__lead">An API key or a wallet approval that lets the agent do anything.</p>
-          <p class="split__text">One bug or one prompt injection and everything is gone.</p>
+          <p class="split__lead">One key, one bug, everything gone.</p>
         </div>
         <div class="split__col">
           <p class="eyebrow">Approve every action</p>
-          <p class="split__lead">A human signs every transaction.</p>
-          <p class="split__text">Then the agent isn’t autonomous, and the human is the bottleneck at 3 a.m.</p>
+          <p class="split__lead">The human is the bottleneck at 3 a.m.</p>
         </div>
       </div>
       <p class="eyebrow cases__eyebrow">It keeps happening</p>
@@ -194,40 +192,35 @@
     <section class="chapter" id="aqua" data-reveal>
       <div class="chapter__head">
         <span class="chapter__num">02</span>
-        <h2 class="chapter__title">On 1inch Aqua the problem is sharper: a strategy is immutable, so someone has to keep closing and reopening it.</h2>
+        <h2 class="chapter__title">On Aqua a strategy is immutable, so someone must run the loop.</h2>
+        <p class="chapter__body">There is no “edit position”: <code>dock()</code>, then <code>ship()</code>. Whoever can dock can pull the whole balance.</p>
       </div>
-      <div class="pair">
-        <div class="pair__text">
-          <p>There is no “edit position” on Aqua. Adjusting a range means <code>dock()</code> the old strategy, then <code>ship()</code> a new one.</p>
-          <p>Whoever runs that loop for you holds dock authority, and <strong>whoever can dock can pull the whole virtual balance</strong>. To let an agent manage an Aqua position at all, you hand it the key to your money. That is what you hand a bot today: all or nothing.</p>
-        </div>
-        <figure class="fig fig--loop" aria-label="The dock and ship loop. Whoever runs the loop can pull the whole balance.">
-          <svg viewBox="0 0 420 200" class="loop" role="img">
-            <title>dock() then ship(): the loop someone has to run</title>
-            <rect x="20" y="70" width="140" height="60" rx="10" class="loop__box"/>
-            <text x="90" y="96" class="loop__label" text-anchor="middle">position</text>
-            <text x="90" y="116" class="loop__sub" text-anchor="middle">HYPE / USDC on Aqua</text>
-            <rect x="260" y="70" width="140" height="60" rx="10" class="loop__box"/>
-            <text x="330" y="96" class="loop__label" text-anchor="middle">whoever runs</text>
-            <text x="330" y="116" class="loop__sub" text-anchor="middle">the loop</text>
-            <path d="M160 88 C 200 40, 220 40, 260 88" class="loop__arc"/>
-            <path d="M260 112 C 220 160, 200 160, 160 112" class="loop__arc"/>
-            <text x="210" y="46" class="loop__code" text-anchor="middle">dock()</text>
-            <text x="210" y="168" class="loop__code" text-anchor="middle">ship()</text>
-            <path d="M254 84 l6 4 -6 4" class="loop__arrow"/>
-            <path d="M166 116 l-6 -4 6 -4" class="loop__arrow"/>
-          </svg>
-          <figcaption>Whoever can <code>dock()</code> can take everything. Delegation is unavoidable; the delegate holds the whole balance.</figcaption>
-        </figure>
-      </div>
+      <figure class="fig fig--loop" aria-label="The dock and ship loop. Whoever runs the loop can pull the whole balance.">
+        <svg viewBox="0 0 420 200" class="loop" role="img">
+          <title>dock() then ship(): the loop someone has to run</title>
+          <rect x="20" y="70" width="140" height="60" rx="10" class="loop__box"/>
+          <text x="90" y="96" class="loop__label" text-anchor="middle">position</text>
+          <text x="90" y="116" class="loop__sub" text-anchor="middle">HYPE / USDC on Aqua</text>
+          <rect x="260" y="70" width="140" height="60" rx="10" class="loop__box"/>
+          <text x="330" y="96" class="loop__label" text-anchor="middle">whoever runs</text>
+          <text x="330" y="116" class="loop__sub" text-anchor="middle">the loop</text>
+          <path d="M160 88 C 200 40, 220 40, 260 88" class="loop__arc"/>
+          <path d="M260 112 C 220 160, 200 160, 160 112" class="loop__arc"/>
+          <text x="210" y="46" class="loop__code" text-anchor="middle">dock()</text>
+          <text x="210" y="168" class="loop__code" text-anchor="middle">ship()</text>
+          <path d="M254 84 l6 4 -6 4" class="loop__arrow"/>
+          <path d="M166 116 l-6 -4 6 -4" class="loop__arrow"/>
+        </svg>
+        <figcaption>All or nothing: that is what you hand a bot today.</figcaption>
+      </figure>
     </section>
 
     <!-- 03 · The idea -->
     <section class="chapter chapter--wide" id="idea" data-reveal>
       <div class="chapter__head">
         <span class="chapter__num">03</span>
-        <h2 class="chapter__title">The idea: decay, not expiry. Expiry is a cliff. Decay is a slope.</h2>
-        <p class="chapter__body">Leash gives the agent a permission that shrinks by itself. The number is how much the market can take from your position right now. It halves every 24 hours since a verified human last showed up, interpolated inside the day so there are no steps, and is cut to zero at 72 hours. Nobody but a human can top it up.</p>
+        <h2 class="chapter__title">Decay, not expiry. Expiry is a cliff; decay is a slope.</h2>
+        <p class="chapter__body">The cap halves every 24 hours since a verified human last showed up, and is cut to zero at 72.</p>
       </div>
 
       <div class="decay" id="decay">
@@ -239,7 +232,6 @@
           </div>
           <svg viewBox="0 0 640 260" class="decay__svg" role="img" aria-labelledby="decay-title">
             <title id="decay-title">The cap halves every 24 hours and is cut to zero at 72 hours. A human proof resets it to the top.</title>
-            <!-- grid -->
             <line x1="60" y1="20" x2="60" y2="220" class="ax"/>
             <line x1="60" y1="220" x2="620" y2="220" class="ax"/>
             <line x1="60" y1="120" x2="620" y2="120" class="grid"/>
@@ -256,15 +248,11 @@
             <text x="240" y="244" class="tick" text-anchor="middle">24h</text>
             <text x="420" y="244" class="tick" text-anchor="middle">48h</text>
             <text x="600" y="244" class="tick" text-anchor="middle">72h · cutoff</text>
-            <!-- cliff for comparison -->
             <path d="M60 20 H600 V220" class="cliff"/>
             <text x="470" y="40" class="tick tick--muted">expiry: a cliff</text>
-            <!-- decay path: linear inside each day, halving at day marks, cut to zero at 72h -->
             <path d="M60 20 L240 120 L420 170 L600 195 V220" class="curve"/>
-            <!-- played portion -->
             <path id="decay-progress" d="" class="curve curve--live"/>
             <circle id="decay-dot" cx="60" cy="20" r="5" class="dot"/>
-            <!-- scan marker -->
             <g id="decay-scan" class="scan" opacity="0">
               <line x1="60" y1="20" x2="60" y2="220" class="scan__line"/>
               <text x="68" y="60" class="scan__label">human scans → back to the top</text>
@@ -285,76 +273,51 @@
             <div class="facts__row"><dt>Close positions</dt><dd class="mono accent">Always</dd></div>
           </dl>
           <button type="button" class="btn btn--ghost" id="decay-scan-btn">Human scans with World ID</button>
-          <p class="decay__note">Big trades shrink first, so the agent is never suddenly stranded. At zero it can still close. Only a World ID proof from a human moves the clock back.</p>
+          <p class="decay__note">Big trades shrink first. At zero the agent can still close.</p>
         </div>
       </div>
     </section>
 
     <!-- 04 · How it's built -->
-    <section class="chapter" id="built" data-reveal>
+    <section class="chapter chapter--wide" id="built" data-reveal>
       <div class="chapter__head">
         <span class="chapter__num">04</span>
-        <h2 class="chapter__title">How it’s built. ENS holds the permission. World makes renewal human-only. A SwapVM opcode enforces the cap inside every trade.</h2>
+        <h2 class="chapter__title">How it’s built: three lanes, three sponsors.</h2>
+        <p class="chapter__body">ENS holds the permission. World makes renewal human-only. A SwapVM opcode enforces the cap inside every trade.</p>
       </div>
-      <pre class="arch mono" aria-label="Architecture">Alice (one page) ── World ID ──► backend ──┬─ grantRoles(tier) ──► Alice's ENSv2 UserRegistry
-                                           └─ verify()          ──► Vault.lastVerified
-agent/loop.mjs ── ship / dock ──► Vault (Aqua maker, holds the tokens) ──► 1inch Aqua
-market (any taker) ── swap ──► MandateAquaRouter ── 0x2f MandateGate ──► Vault.mandate() ──► ENS roles</pre>
-
-      <div class="claims">
-        <div class="claim">
-          <div class="claim__row"><h3 class="claim__title">Close positions</h3><span class="claim__val accent">Always</span></div>
-          <p class="claim__text"><code>dock()</code> never reads the mandate. The failure state is resting, not stuck.</p>
+      <div class="lanes" id="lanes">
+        <div class="lanes__scroll">
+          <svg class="lanes__svg" id="lanes-svg" viewBox="0 0 960 340" role="group" aria-label="Three lanes: permission, money, enforcement. Select a lane to read one sentence about it."></svg>
         </div>
-        <div class="claim">
-          <div class="claim__row"><h3 class="claim__title">Open new ranges</h3><span class="claim__val">only while the leash is alive</span></div>
-          <p class="claim__text"><code>ship()</code> needs the ENS role and a cap above zero. At zero the chain refuses with <code>MandateEmpty</code>.</p>
-        </div>
-        <div class="claim claim--note">
-          <p>Your funds sit in your own vault. The agent holds permission, not money, and only you can withdraw.</p>
-        </div>
+        <p class="lanes__caption" id="lanes-caption" aria-live="polite">Hover or tap a lane.</p>
       </div>
-
-      <div class="who">
-        <table class="who__table">
-          <thead><tr><th>Question</th><th>Who answers it</th><th>Where it lives</th></tr></thead>
-          <tbody>
-            <tr><td>Is this bot allowed at all?</td><td>You</td><td>MANDATE role bit on <code>&lt;name&gt;.leash.eth</code>, revocable, readable by anyone</td></tr>
-            <tr><td>How much can the market take?</td><td>Your World ID tier, decaying with time, capped by your own number</td><td><code>Vault.capNow()</code>, enforced by the opcode in every quote and swap</td></tr>
-            <tr><td>Which pair, how big, when to re-range?</td><td>The agent</td><td>Its own policy and loop</td></tr>
-            <tr><td>Can it renew its own permission?</td><td>No</td><td><code>Vault.verify()</code> is backend-only, after a server-side World proof check</td></tr>
-          </tbody>
-        </table>
-      </div>
+      <ul class="lines">
+        <li><span>Close positions</span><span class="accent mono">Always</span></li>
+        <li><span>Open new ranges</span><span class="mono">only while the leash is alive</span></li>
+        <li class="lines__note">Your funds sit in your own vault. The agent holds permission, not money, and only you can withdraw.</li>
+      </ul>
     </section>
 
     <!-- 05 · The opcode -->
     <section class="chapter chapter--wide" id="opcode" data-reveal>
       <div class="chapter__head">
         <span class="chapter__num">05</span>
-        <h2 class="chapter__title">This isn’t a UI rule. It’s a SwapVM opcode that runs inside every quote and swap.</h2>
-        <p class="chapter__body">Read the maker’s mandate, revert if revoked or empty, trim the USDC leg to what is still allowed. Built-in guards say yes or no; this one says <em>how much</em>. It runs in quotes too, so there is no path around it.</p>
+        <h2 class="chapter__title">Not a UI rule: a SwapVM opcode inside every quote and swap.</h2>
+        <p class="chapter__body">Read the mandate, revert if revoked or empty, trim the USDC leg. Guards say yes or no; this says how much.</p>
       </div>
       <div class="pair pair--code">
         <figure class="code">
           <figcaption class="code__cap"><span>src/MandateGate.sol · opcode <span class="mono">0x2f</span></span><span class="mono">26.6k gas per swap</span></figcaption>
-<pre class="mono"><code><span class="c">// read-only: runs inside quotes (static context)</span>
-function exec(Context memory ctx, bytes calldata) internal view {
-    address maker = ctx.query.maker;
-    (bool alive, uint256 limit, address capToken) = IMandateVault(maker).mandate();
-    require(alive, MandateRevoked(maker));
-    require(limit &gt; 0, MandateEmpty(maker));
+<pre class="mono"><code>(bool alive, uint256 limit, address capToken) =
+    IMandateVault(maker).mandate();
+<span class="hl">require(alive, MandateRevoked(maker));</span>
+<span class="hl">require(limit &gt; 0, MandateEmpty(maker));</span>
 
-    if (ctx.query.tokenIn == capToken) {
-        if (ctx.query.isExactIn) {
-            if (ctx.swap.amountIn &gt; limit) ctx.swap.amountIn = limit;
-        } else {
-            uint256 maxOut = limit * ctx.swap.balanceOut / (ctx.swap.balanceIn + limit);
-            if (ctx.swap.amountOut &gt; maxOut) ctx.swap.amountOut = maxOut;
-        }
-    } else if (ctx.query.tokenOut == capToken) { <span class="c">/* inverse of x·y=k, symmetric */</span> }
-    else revert MandateTokenMissing(maker, capToken);
-}</code></pre>
+if (ctx.query.tokenIn == capToken) {
+<span class="hl">    if (ctx.swap.amountIn &gt; limit) ctx.swap.amountIn = limit;</span>
+} else if (ctx.query.tokenOut == capToken) {
+<span class="hl">    if (ctx.swap.amountOut &gt; limit) ctx.swap.amountOut = limit;</span>
+} else revert MandateTokenMissing(maker, capToken);</code></pre>
         </figure>
 
         <figure class="trim" aria-label="A trimmed trade: the market asked for 10,000 USDC and was allowed 7,500.">
@@ -373,7 +336,7 @@ function exec(Context memory ctx, bytes calldata) internal view {
             <span class="pill pill--trim"><i></i>Trimmed</span>
             <span>Asked 10,000 · allowed 7,500 · at 24 demo-hours</span>
           </div>
-          <figcaption>Reverting would punish the taker for the maker’s state. Trimming keeps the market usable: the taker sets <code>allowPartialFill</code> and gets what is allowed. Reverts are reserved for revoked and empty.</figcaption>
+          <figcaption>Trim, don’t revert: the taker gets what is allowed.</figcaption>
         </figure>
       </div>
     </section>
@@ -382,7 +345,7 @@ function exec(Context memory ctx, bytes calldata) internal view {
     <section class="chapter chapter--wide" id="demo" data-reveal>
       <div class="chapter__head">
         <span class="chapter__num">06</span>
-        <h2 class="chapter__title">The demo, step by step. Everything here ran on Sepolia, not on a mock.</h2>
+        <h2 class="chapter__title">The demo, step by step, on Sepolia.</h2>
       </div>
       <div class="stepper" id="stepper" tabindex="0" aria-label="Demo flow. Use the arrow keys or the buttons to step through.">
         <ol class="stepper__list" id="step-list"></ol>
@@ -418,52 +381,52 @@ function exec(Context memory ctx, bytes calldata) internal view {
     <section class="chapter" id="sponsors" data-reveal>
       <div class="chapter__head">
         <span class="chapter__num">07</span>
-        <h2 class="chapter__title">Three sponsors, each load-bearing. Each integration changed the design.</h2>
+        <h2 class="chapter__title">Three sponsors, each load-bearing.</h2>
       </div>
-      <div class="three">
-        <div class="three__col">
-          <p class="eyebrow">ENSv2</p>
-          <p class="three__lead">Holds the permission.</p>
-          <p>The mandate is a role bit on a name you own in your own <code>UserRegistry</code>. Token admin bits cannot be delegated in ENSv2, so the backend holds tier-admin at the registry root: it can set tiers but never touch MANDATE. Name expiry kills all roles automatically.</p>
-          <p class="three__one">vs a signature: a signature can’t be revoked; a live role can, and anyone can read it.</p>
+      <dl class="gave">
+        <div class="gave__col">
+          <dt><span class="pill pill--pause">ENSv2</span></dt>
+          <dd><span>Holds the permission</span><span>Role bit in your own UserRegistry</span></dd>
+          <dd><span>Backend can’t touch MANDATE</span><span>Tier-admin at the registry root only</span></dd>
+          <dd><span>Name expiry</span><span>Kills every role automatically</span></dd>
         </div>
-        <div class="three__col">
-          <p class="eyebrow">World ID</p>
-          <p class="three__lead">Makes renewal human-only.</p>
-          <p>Without it the agent would renew its own permission and decay is theatre. Replay protection is the signed request nonce, single-use, not the nullifier, because the same human must be able to come back. The nullifier binds one human to one vault.</p>
-          <p class="three__one">Selfie Check 2,000 · passport 7,500 · Orb 15,000 USDC.</p>
+        <div class="gave__col">
+          <dt><span class="pill pill--pause">World ID</span></dt>
+          <dd><span>Renewal is human-only</span><span>Otherwise decay is theatre</span></dd>
+          <dd><span>Replay protection</span><span>Single-use signed nonce, not the nullifier</span></dd>
+          <dd><span>One human per vault</span><span>Nullifier binds them</span></dd>
         </div>
-        <div class="three__col">
-          <p class="eyebrow">1inch Aqua · SwapVM</p>
-          <p class="three__lead">Enforces it inside the trade.</p>
-          <p>The Aqua router shipped with no permission instruction at all. <code>MandateGate</code> is one, and it answers how much rather than yes/no. The engine, XYCSwap, Aqua and taker traits are 1inch’s, unchanged.</p>
-          <p class="three__one">vs the Decay opcode: Decay shrinks what’s offered; ours shrinks what’s still allowed.</p>
+        <div class="gave__col">
+          <dt><span class="pill pill--pause">1inch Aqua · SwapVM</span></dt>
+          <dd><span>Enforced inside the trade</span><span>Opcode 0x2f, quotes and swaps</span></dd>
+          <dd><span>Says how much</span><span>Built-in guards say yes or no</span></dd>
+          <dd><span>Engine unchanged</span><span>XYCSwap, Aqua, taker traits are 1inch’s</span></dd>
         </div>
-      </div>
+      </dl>
     </section>
 
     <!-- 08 · Numbers -->
     <section class="chapter" id="numbers" data-reveal>
       <div class="chapter__head">
         <span class="chapter__num">08</span>
-        <h2 class="chapter__title">Numbers, measured on Sepolia on 26 September 2026.</h2>
+        <h2 class="chapter__title">Numbers, measured on Sepolia.</h2>
       </div>
       <dl class="stats">
-        <div class="stat"><dt>Gate cost per swap, real ENSv2 registry</dt><dd class="mono">26.6k <span>gas</span></dd></div>
+        <div class="stat"><dt>Gate cost per swap</dt><dd class="mono">26.6k <span>gas</span></dd></div>
         <div class="stat"><dt>Ask trimmed on-chain</dt><dd class="mono">10,000 → 7,500</dd></div>
-        <div class="stat"><dt>Authority at 72 demo-hours</dt><dd class="mono">0</dd></div>
+        <div class="stat"><dt>Zero at</dt><dd class="mono">72 <span>demo-hours</span></dd></div>
         <div class="stat"><dt>Halves every</dt><dd class="mono">24 <span>hours</span></dd></div>
-        <div class="stat"><dt>Router size, 24,576 B limit</dt><dd class="mono">22,509 <span>B</span></dd></div>
-        <div class="stat"><dt>Tests · 71 contract, 27 fork, 57 backend, 17 e2e</dt><dd class="mono">172</dd></div>
+        <div class="stat"><dt>Router size</dt><dd class="mono">22,509 <span>B</span></dd></div>
+        <div class="stat"><dt>Tests · 71 + 27 + 57 + 17</dt><dd class="mono">172</dd></div>
       </dl>
-      <p class="chapter__foot">Every guard in the contracts and backend was checked by breaking it and watching a test fail. The e2e suite stubs World at exactly two edges; everything else is real.</p>
+      <p class="chapter__foot">Every guard was checked by breaking it and watching a test fail.</p>
     </section>
 
     <!-- 09 · Live -->
     <section class="chapter" id="live" data-reveal>
       <div class="chapter__head">
         <span class="chapter__num">09</span>
-        <h2 class="chapter__title">Live now. The demo vault, read from Sepolia.</h2>
+        <h2 class="chapter__title">Live now: the demo vault, read from Sepolia.</h2>
       </div>
       <div class="live" id="live-panel" data-state="static">
         <div class="live__main">
@@ -485,14 +448,14 @@ function exec(Context memory ctx, bytes calldata) internal view {
     <section class="chapter" id="try" data-reveal>
       <div class="chapter__head">
         <span class="chapter__num">10</span>
-        <h2 class="chapter__title">Try it with your wallet. Alice is just the persona in the story.</h2>
+        <h2 class="chapter__title">Try it with your wallet.</h2>
       </div>
       <ol class="steps">
-        <li><span class="steps__n mono">1</span><div><strong>Connect wallet</strong><span>Any injected wallet on Sepolia.</span></div></li>
-        <li><span class="steps__n mono">2</span><div><strong>Create your vault</strong><span>One transaction: vault + <code>&lt;name&gt;.leash.eth</code> registered to you + the agent’s mandate.</span></div></li>
-        <li><span class="steps__n mono">3</span><div><strong>Verify with World</strong><span>Scan with World App. The credential you pick sets the ceiling.</span></div></li>
-        <li><span class="steps__n mono">4</span><div><strong>Deposit</strong><span>Demo USDC and HYPE into your own vault.</span></div></li>
-        <li><span class="steps__n mono">5</span><div><strong>Set a cap</strong><span>At or under your tier. It can only go down from there.</span></div></li>
+        <li><span class="steps__n mono">1</span><div><strong>Connect wallet</strong><span>Any wallet on Sepolia</span></div></li>
+        <li><span class="steps__n mono">2</span><div><strong>Create your vault</strong><span>One transaction: vault + <code>&lt;name&gt;.leash.eth</code> + mandate</span></div></li>
+        <li><span class="steps__n mono">3</span><div><strong>Verify with World</strong><span>The credential sets the ceiling</span></div></li>
+        <li><span class="steps__n mono">4</span><div><strong>Deposit</strong><span>Into your own vault</span></div></li>
+        <li><span class="steps__n mono">5</span><div><strong>Set a cap</strong><span>At or under your tier</span></div></li>
       </ol>
       <div class="try__cta">
         <a class="cta" href="/app" data-enter>
@@ -501,12 +464,11 @@ function exec(Context memory ctx, bytes calldata) internal view {
             <path d="M5 12h14" /><path d="m12 5 7 7-7 7" />
           </svg>
         </a>
-        <p class="try__note">If you scan the QR on someone else’s vault you are refused: that vault already has its human.</p>
+        <p class="try__note">Someone else’s vault refuses your scan: it already has its human.</p>
       </div>
-
       <div class="next">
         <p class="eyebrow">Where it goes</p>
-        <p>Today the cap bounds each fill, not cumulative volume; a cumulative budget is the next step and lives in the Vault, which already tracks positions. Then more curves, and any recurring authority that should die when the human stops showing up: payroll streams, grant disbursement, treasury limits.</p>
+        <p>A cumulative budget in the Vault, more curves, and any recurring authority that should die when the human stops showing up.</p>
       </div>
     </section>
 
