@@ -12,7 +12,7 @@ On 1inch Aqua a strategy is immutable: to adjust a position you `dock()` it and 
 
 ## What Leash does
 
-Alice gives her agent a **mandate** instead of a key:
+Anyone with a wallet gives their agent a **mandate** instead of a key. Connect, create your vault (one transaction: the vault, `<name>.leash.eth` registered to you, the agent's mandate), verify with World, deposit, set a cap. Then:
 
 - **It lives in ENS.** The agent holds a role bit on `agent.leash.eth`, in Alice's own ENSv2 registry. She can revoke it; anyone can read it on-chain.
 - **It shrinks by itself.** A cap on how much the market can take from her position halves every 24 hours from the last time a human proved presence, and reaches zero after three days. Her World ID credential sets the ceiling (Selfie Check 2,000 · passport 7,500 · Orb 15,000 USDC).
@@ -26,7 +26,7 @@ Alice gives her agent a **mandate** instead of a key:
 
 ## Demo, 90 seconds
 
-1. Alice verifies with World; the cap appears by tier. She deposits into her vault and sets the mandate.
+1. Alice connects her wallet and creates her vault in one transaction. She verifies with World; the cap appears by tier. She deposits and sets the mandate.
 2. The agent opens a position on its own (`agent/loop.mjs`).
 3. The market trades; a 10,000 USDC ask fills for 7,500 as the cap decays (feed: "Asked 10,000 · allowed 7,500").
 4. The cap hits zero. The agent is refused, closes the position, waits.
@@ -45,6 +45,7 @@ market (any taker) ── swap ──► MandateAquaRouter ── 0x2f MandateGa
 
 | Piece | Where | Ours? |
 |---|---|---|
+| `VaultFactory` — any wallet: Vault + `<label>.leash.eth` registered to the caller + agent mandate, one transaction | `src/VaultFactory.sol` | yes |
 | `Vault` — Aqua maker; `ship` needs the role + a live cap, `dock` is always open, `withdraw` owner-only, `verify` backend-only | `src/Vault.sol` | yes |
 | `MandateGate` — SwapVM opcode `0x2f`; trims the USDC leg, inverse x·y=k when USDC is the computed leg; refuses pairs without USDC | `src/MandateGate.sol` | yes |
 | `MandateAquaRouter` — 1inch's Aqua router + `0x2f`; 22,509 B | `src/MandateAquaRouter.sol` | yes |
@@ -66,7 +67,8 @@ market (any taker) ── swap ──► MandateAquaRouter ── 0x2f MandateGa
 | | Address |
 |---|---|
 | `leash.eth` → Alice's UserRegistry | `0x00C79cAd7282dad808620CeeEca662EA1a3609bd` |
-| Vault (v3) | `0x479576d6cC84c8Db48e31726B11c2DE0d00CC2B9` |
+| VaultFactory | `0x0B037692580536e8010f2A1501313d54269052C2` |
+| Demo Vault (v3) | `0x479576d6cC84c8Db48e31726B11c2DE0d00CC2B9` |
 | MandateAquaRouter | `0xa091409BA5C9c6Cae2Db2e924f6b460b44Dfb62f` |
 | Aqua (self-deployed) | `0x7E13F754772777D098E4f8B22f82Dcdf3Ea55cC2` |
 | Demo USDC / HYPE | `0xa44B…683F` / `0xa284…9375` |
@@ -88,9 +90,9 @@ cd agent && TAKER_KEY=$TAKER_KEY node market.mjs       # the market
 | Tests | Command | Count |
 |---|---|---|
 | Contracts | `forge test --no-match-path "test/fork/*"` | 71 |
-| Contracts on a Sepolia fork (real ENSv2) | `forge test --match-path "test/fork/*"` | 22 |
-| Backend + dashboard logic | `cd backend && npm test` | 50 |
-| End to end in a browser on an Anvil fork | `npx --prefix e2e playwright test --config e2e/playwright.config.js` | 14 |
+| Contracts on a Sepolia fork (real ENSv2) | `forge test --match-path "test/fork/*"` | 27 |
+| Backend + dashboard logic | `cd backend && npm test` | 57 |
+| End to end in a browser on an Anvil fork | `npx --prefix e2e playwright test --config e2e/playwright.config.js` | 17 |
 
 Every guard in the contracts and backend was checked by breaking it and watching a test fail. The e2e suite stubs World at exactly two edges (the IDKit script and the portal HTTP call); everything else is real.
 

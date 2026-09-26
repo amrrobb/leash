@@ -49,7 +49,7 @@ export async function report(kind, title, detail) {
   try {
     const headers = { "Content-Type": "application/json" };
     if (process.env.DEMO_TOKEN) headers["x-demo-token"] = process.env.DEMO_TOKEN; // needed when the dashboard is hosted elsewhere
-    await fetch(`${backend}/api/agent/event`, { method: "POST", headers, body: JSON.stringify({ kind, title, detail }) });
+    await fetch(`${backend}/api/agent/event`, { method: "POST", headers, body: JSON.stringify({ vault: deployment.vault, kind, title, detail }) });
   } catch {
     // dashboard not running; fine
   }

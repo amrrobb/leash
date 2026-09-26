@@ -104,6 +104,7 @@ export default async function globalSetup() {
 
 /** Runs script/Agent.s.sol against the fork. Returns forge's stdout; throws if the script reverts. */
 export function agent(action, extra = {}) {
+  // Every run gets a vault of its own from the factory; the caller passes it as VAULT.
   const { keys } = JSON.parse(readFileSync(`${tmp}/keys.json`, "utf8"));
   return execFileSync("forge", ["script", "script/Agent.s.sol", "--rpc-url", ANVIL, "--broadcast", "--slow"], {
     cwd: root,

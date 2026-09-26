@@ -8,6 +8,7 @@ Have open: the dashboard in State B with the agent loop and the market bot runni
 
 | Beat | Say | Show |
 |---|---|---|
+| Open (10 s) | "Any wallet. I connect, create my vault, name my agent: one transaction. ENS registers the name to me and gives the agent its mandate." | Connect → Create your vault → the name appears in the header |
 | Hook (10 s) | "On 1inch Aqua you can't edit a position. You close it and open a new one. So whoever runs that loop for you holds the key to your whole balance. That's what you hand a bot today: all or nothing." | Dashboard, big number |
 | Whose money (5 s) | "Her funds sit in her own vault; here's the balance. The bot never holds them." | Mandate card: "In your vault: 10,000 USDC · 1,000 HYPE" |
 | Idea (15 s) | "Leash gives the bot a permission that shrinks by itself. This number is how much the market can take from Alice's position right now. It halves every day since she last proved she's a human, with World ID. Nobody but a human can top it up." | Point at the number and the ASCII leash sagging |
@@ -41,8 +42,8 @@ Memorise the one-liners (from HANDOFF §9):
 ## 3. Demo run sheet
 
 Before judges arrive:
-1. Backend on real Sepolia with `DEMO_OWNER_KEY=$OWNER_KEY` (production World mode if you'll scan with your phone; staging + `WORLD_CREDENTIALS=proof_of_human` if you'll use the simulator).
-2. `agent/loop.mjs` and `agent/market.mjs` running in a visible terminal.
+1. Backend on real Sepolia (production World mode if you'll scan with your phone; staging + `WORLD_CREDENTIALS=proof_of_human` if you'll use the simulator). MetaMask on Sepolia with a funded account for you (the owner) and the agent's address at hand.
+2. `agent/loop.mjs` and `agent/market.mjs` running in a visible terminal with `VAULT=<your vault>`.
 3. Check gas: agent, backend, taker each above 0.005 ETH.
 4. Do one verify so you start in State B, not C. It takes 3 minutes to reach zero, so re-verify every ~2 minutes while talking, or let it hit zero on purpose when you reach the "asymmetry" beat.
 
@@ -71,7 +72,7 @@ One currency for both directions. If the cap were in the swapped token, 2,000 wo
 It's ~20% on a 130k Aqua swap, one ENS read and one Vault read. It's the price of an on-chain permission read at execution time; a whitelist read costs about the same. We measured it against the real registry, not a mock.
 
 **"Can I try it myself? Do I have to be Alice?"**
-The live dashboard is Alice's vault, and you're welcome to watch it while the agent runs. If you scan the QR with your own World App you'll be refused: the vault already has its human, and a verified person who isn't Alice can't renew her agent. That refusal is the product working. To be Alice, run it locally: the repo ships a fork-based demo and a browser test that walks every state (`docs/SETUP.md`).
+No. Connect your own wallet on Sepolia, create your own vault (one transaction: vault, `<name>.leash.eth` registered to you, your agent's mandate), verify with your own World App, deposit demo tokens and set a cap. Alice is just the persona in the story. If you scan the QR on *someone else's* vault you're refused: that vault already has its human.
 
 ### The hard one
 

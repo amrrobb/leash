@@ -49,14 +49,14 @@ The root `foundry.toml` mirrors swap-vm (0.8.30, via-IR, 700 runs) and sets `tes
 | `WORLD_ENVIRONMENT` | backend | Default `staging`; `production` for a real World App |
 | `WORLD_STAGING_TOKEN` | backend | From `set_world_id_staging_verification`; sent as `x-staging-verification-token` |
 | `WORLD_CREDENTIALS` | backend → page | Comma list. `proof_of_human` for the simulator (it completes only a single PoH request); default all four for a real phone |
-| `DEMO_OWNER_KEY` | backend | Enables `/api/demo/*` (Alice's owner actions). Loopback-only unless `DEMO_TOKEN` is set and sent as `x-demo-token` |
+| `DEMO_OWNER_KEY` | backend (tests, scripted demos) | Enables the test signer (`/api/demo/send`): a wallet stand-in Playwright uses. Loopback-only unless `DEMO_TOKEN` is set and sent as `x-demo-token`. Real users sign with their own wallet |
 | `RPC_URL`, `DEPLOYMENTS`, `DB_PATH`, `PORT` | backend | Defaults: `SEPOLIA_RPC`, `deployments/sepolia.json`, `backend/leash-<vault>.db`, `8787` |
 
 Save any key you generate to `.env` **before** funding it.
 
 ## 4. Deploy
 
-Fresh (new registry, Aqua, tokens, Vault, router):
+Fresh (new registry, Aqua, tokens, demo Vault, router, factory):
 ```bash
 RPC=$SEPOLIA_RPC ALICE_KEY=$ALICE_KEY AGENT=$AGENT BACKEND=$BACKEND SPEED=1440 OUT=e2e/.tmp/new.json script/deploy.sh
 ```
@@ -67,7 +67,7 @@ D=deployments/sepolia.json
 RPC=$SEPOLIA_RPC USER_REGISTRY=$(jq -r .userRegistry $D) AQUA=$(jq -r .aqua $D) USDC=$(jq -r .usdc $D) HYPE=$(jq -r .hype $D) \
   ALICE_KEY=$ALICE_KEY AGENT=$AGENT BACKEND=$BACKEND SPEED=1440 OUT=e2e/.tmp/redeploy.json script/deploy.sh
 ```
-Then copy the new `vault`, `router` and `deployBlock` into `deployments/sepolia.json`.
+Then copy the new `vault`, `router`, `factory`, `factoryBlock` and `deployBlock` into `deployments/sepolia.json`. The factory holds root REGISTRAR + MANDATE-admin on the registry so `createVault` can register `<label>.leash.eth` to the caller and grant the agent its mandate in one transaction.
 
 The `.eth` name takes two runs at least 60 s apart:
 ```bash
@@ -90,6 +90,10 @@ Configured through the World Developer Portal MCP (`claude mcp add worldcoin-dev
 
 Lost the signing key? `rotate_world_id_signing_key { app_id }` returns a new one once.
 
+## 5b. Use it with your own wallet
+
+Open `/app`, **Connect wallet** (MetaMask on Sepolia), **Create your vault** (agent name + agent address, one transaction), **Verify with World**, **Deposit** and set the starting authority. Every owner action is a wallet transaction: the backend only builds calldata (`GET /api/tx?kind=…`) and never holds owner keys. Anyone can view a vault read-only at `/app?vault=<address>`; the agent runs with `VAULT=<address>`.
+
 ## 6. Run
 
 ```bash
@@ -106,8 +110,8 @@ DEPLOYMENT=deployments/sepolia.json SALT=1 ACTION=dock  AGENT_KEY=$AGENT_KEY for
 Or let the agent run on its own (this is what the demo video shows), with the market as a second process:
 ```bash
 (cd agent && npm ci)
-cd agent && AGENT_KEY=$AGENT_KEY node loop.mjs          # opens, re-ranges, is refused at zero, closes, resumes
-cd agent && TAKER_KEY=$TAKER_KEY node market.mjs        # random 1,500–12,000 USDC trades every ~40 s
+cd agent && VAULT=<your vault> AGENT_KEY=$AGENT_KEY node loop.mjs   # opens, re-ranges, is refused at zero, closes, resumes
+cd agent && VAULT=<your vault> TAKER_KEY=$TAKER_KEY node market.mjs  # random 1,500–12,000 USDC trades every ~40 s
 ```
 `agent/policy.json` holds the agent's own choices (pairs, sizes, re-range interval, poll interval). The loop reports refused attempts to the dashboard through `POST /api/agent/event` (loopback-only, or `x-demo-token`). See [AGENT.md](AGENT.md) for the use case and the loop's rules.
 

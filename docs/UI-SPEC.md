@@ -7,6 +7,7 @@ One-page web app. A human (Alice) gives an AI agent permission to run her 1inch 
 - One HTML file, one JS file, no framework. Fonts: **IBM Plex Sans** (UI) and **IBM Plex Mono** (every number, tabular figures).
 - No navigation. States A → A′ → B are **one card that changes**. B, B-trimming and C share **one layout** with different values. C is grey, never red: it is a resting state, not an error.
 - The elements below carry `data-testid` / `id` attributes that the JS writes into and the Playwright tests read. Keep them on the equivalent element in the new design (see the table in §8).
+- Owner actions (deposit, set cap, revoke, restore, withdraw) are wallet transactions signed by the connected wallet; the page asks the backend for calldata and hands it to `window.ethereum`. Anyone can open `/app?vault=<address>` read-only.
 - Desktop first: designed at **1280 × 900**. One breakpoint at 1100 px stacks the two cards. Phone layout is a nice-to-have.
 - The number in B/C animates every second on the client from chain time; the page polls the backend every 3 s. Transitions should tolerate values changing under them.
 
@@ -32,10 +33,18 @@ Tone: calm, financial, factual. No shields, locks, alarms, robots, crypto icons.
 
 ## 2. Shared header (every state)
 
-- Left: logo mark (a ring with a dotted lead to a dot: `frontend/brand/leash-logo-512-transparent.png`) + wordmark **Leash** (20 px / 600).
-- Right: network label **Sepolia** (muted) and an owner pill **leash.eth** (`data-testid="owner-name"`).
+- Left: logo mark (`frontend/brand/leash-logo-512-transparent.png`) + wordmark **Leash** (20 px / 600).
+- Right: network label **Sepolia** (muted), the vault's name as a pill link when one is open (`vault-link`), and the wallet pill: **Connect wallet** or the short address (`owner-name`).
 
-## 3. State A — no mandate yet
+## 3a. Connect — nothing to look at yet
+
+Single card. Headline **Give your agent permission / that shrinks on its own.**, body copy, primary button **Connect wallet** (`data-testid="connect-wallet"`), the three read-only tier rows. Header pill reads **Connect wallet** (`data-testid="owner-name"`, clickable). Any injected wallet (MetaMask) on Sepolia.
+
+## 3b. Create your vault — wallet connected, no vault
+
+Single card. Headline **Create your vault**; body: "One transaction: your vault, your agent's name under leash.eth, and the agent's mandate. You keep the admin bits, so only you can revoke it." Fields **Agent name** (`agent-label`, shown with the suffix `.leash.eth`) and **Agent address** (`agent-address`). Primary button **Create your vault** (`create-vault`); error line `create-error`. On success the URL becomes `/app?vault=<address>` and the header shows the name as a pill link (`vault-link`).
+
+## 3. State A — vault exists, no mandate yet
 
 Shown when the Vault has no cap set (`ownerCap == 0`) and this browser has not just completed a proof.
 
@@ -43,11 +52,11 @@ Single card, max width 760 px, centred left.
 
 | Element | Copy / data | Hook |
 |---|---|---|
-| Headline (34 px / 600, two lines) | **Give your agent permission** / **that shrinks on its own.** | |
-| Body (16 px muted) | Your funds stay in your vault. The agent gets a leash, and the leash shortens every hour you are away. | |
+| Chip (grey) | `<label>.leash.eth` | `id="verify-name"` |
+| Headline (34 px / 600) | **Now prove you're here.** | |
+| Body (16 px muted) | Your vault exists and your agent has its name. Its authority starts at zero and only a verified human can raise it. The credential you use sets the ceiling. | |
 | Primary button | **Verify with World** | `data-testid="verify-with-world"` |
 | Quiet line (hidden until a cancel) | Verification cancelled. Nothing was granted. | `data-testid="cancelled"` |
-| Tier rows, read-only, three rows | Selfie Check — Beta · liveness, medium assurance — **2,000 USDC** / Passport (NFC) — Document-backed — **7,500 USDC** / Orb — Highest assurance · unique human — **15,000 USDC** | container `id="tier-rows"`, each row class `tier` |
 
 Rules: no error colour after a cancel. The tier rows are information, not choices; the credential is picked inside World App.
 
@@ -75,7 +84,7 @@ Same card as A, content replaced.
 |---|---|---|
 | Status chip (green) | **Verified · {tier name}** e.g. Verified · Selfie Check | `id="a2-verified"` |
 | Headline (28 px) | **Authority up to {tier cap} USDC** | `id="a2-headline"` |
-| Field: Agent name | `agent` (mono) → agent.leash.eth (muted) — read-only | |
+| Field: Agent name | `<label>.leash.eth` from the vault — read-only | `data-testid="a2-name"` |
 | Field: Pair | HYPE / USDC — read-only in the demo | |
 | Field: Starting authority | number input, prefilled with the tier cap, unit **USDC**, right hint **max {cap} · can only go down** | input `data-testid="starting-authority"`, hint `id="a2-max"` |
 | Note (14 px) | Halves every 24 hours unless you return · Reaches zero in ~3 days | |
@@ -115,8 +124,8 @@ State thresholds: Operating while authority ≥ 40 % of granted · Trimming fill
 | Element | Copy / data | Hook |
 |---|---|---|
 | Eyebrow | MANDATE | |
-| Name (19 px / 600) | agent.leash.eth | `data-testid="agent-name"` |
-| Description (muted) | Runs Alice's HYPE/USDC position on 1inch Aqua | |
+| Name (19 px / 600) | `<label>.leash.eth` | `data-testid="agent-name"` |
+| Description (muted) | Runs your HYPE/USDC position on 1inch Aqua · agent 0x1234…abcd | `id="agent-addr"` |
 | Permission row 1 | **Close positions** — Never decays — right: **Always** (accent, always emphasised) | `data-testid="close-perm"` |
 | Permission row 2 | **Open new ranges** — Needs live authority — right: **Allowed** (accent) / **Paused** (grey) | `data-testid="open-perm"` |
 | Permission row 3 | **Largest trade the market can take** — Larger trades get trimmed — right (mono): **Up to 7,500** / **None** | `data-testid="fill-limit"` |
@@ -145,7 +154,7 @@ Row kinds and their pills:
 
 ### 6d. Deposit (built)
 
-Alice's funds enter the Vault by a token transfer to its address; in the demo the owner signer mints the demo tokens there.
+The owner's wallet signs the deposit (demo tokens mint straight into the vault; a real token would be a transfer).
 - Mandate card row **In your vault** — *Only you can withdraw* — right (mono): **10,000 USDC · 1,000 HYPE**, live. Hook `data-testid="vault-balances"`.
 - State A′ field **In your vault** with the same figure (`data-testid="a2-balances"`) and a **Deposit** button (`data-testid="a2-deposit"`): Alice funds the Vault before the agent gets anything to run.
 - Dashboard action **Deposit** (ghost, `data-testid="deposit"`), always visible.
@@ -154,8 +163,9 @@ Alice's funds enter the Vault by a token transfer to its address; in the demo th
 ## 7. Transitions
 
 ```
+Connect ──Connect wallet──► Create ──Create your vault (1 tx)──► A
 A ──Verify with World──► modal ──cancel/decline──► A (quiet line, nothing granted)
-                                └──proof accepted──► A′ ──Create mandate──► B
+                                └──proof accepted──► A′ ──Deposit (2 tx) · Create mandate (1 tx)──► B
 B ──time──► B-trimming (ochre) ──~3 demo days──► C (grey, zero)
 B/C ──Verify again + proof──► B (cap restored)
 B ──Revoke mandate──► C ("You revoked the mandate.", Restore mandate shown)
@@ -167,11 +177,11 @@ Paths judges are told to look for: cancel (World failure path), revoke (human co
 
 ## 8. Hooks the code depends on (keep on the equivalent element)
 
-`data-testid`: owner-name, state-a, verify-with-world, cancelled, state-a2, starting-authority, create-mandate, a2-steps, verify-modal, qr, verify-error, verify-cancel, dashboard, status, authority, reaches-zero, c-note, verify-again, revoke, restore, withdraw, dash-error, agent-name, close-perm, open-perm, fill-limit, feed.
+`data-testid`: owner-name, vault-link, state-connect, connect-wallet, state-create, agent-label, agent-address, create-vault, create-error, state-a, a2-name, viewer-note, verify-with-world, cancelled, state-a2, starting-authority, create-mandate, a2-steps, verify-modal, qr, verify-error, verify-cancel, dashboard, status, authority, reaches-zero, c-note, verify-again, revoke, restore, withdraw, dash-error, agent-name, close-perm, open-perm, fill-limit, feed.
 
 `id` written by the JS: status-label, status-text, cap-text, bar, last, tier-name, zero, open-text, fill-text, clock, tier-rows, a2-verified, a2-headline, a2-max, a2-err, a2-cap, vm-link, vm-text, vm-err, qr, feed.
 
-Sections toggled with the `hidden` attribute: `#state-a`, `#state-a2`, `#dashboard`, `#verify-modal`. Body gets `data-screen` (A / A2 / BC) and `data-state` (B / B-trim / C) for styling hooks.
+Sections toggled with the `hidden` attribute: `#state-connect`, `#state-create`, `#state-a`, `#state-a2`, `#dashboard`, `#verify-modal`. Body gets `data-screen` (connect / create / verify / A2 / BC) and `data-state` (B / B-trim / C) for styling hooks.
 
 Classes used by the JS for tones: `tone-ok`, `tone-trim`, `tone-pause` on the status pill and feed pills; `feed-row`, `feed-empty`, `tier`.
 

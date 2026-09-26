@@ -101,24 +101,43 @@ a { color: var(--accent); }
       <img src="/brand/leash-logo-512-transparent.png" alt="" width="26" height="26" style="display:block">
       <span>Leash</span>
     </div>
-    <div class="who"><span>Sepolia</span><span class="pill-name" data-testid="owner-name">leash.eth</span></div>
+    <div class="who"><span>Sepolia</span><a class="pill-name" id="vault-link" data-testid="vault-link" href="#" hidden></a><button class="pill-name" id="owner-name" data-testid="owner-name" style="cursor:pointer">Connect wallet</button></div>
   </header>
 
 
-  <!-- State A: no mandate yet -->
-  <section id="state-a" class="card solo" data-testid="state-a" hidden>
+  <!-- Connect: nothing to look at yet -->
+  <section id="state-connect" class="card solo" data-testid="state-connect" hidden>
     <h1>Give your agent permission<br>that shrinks on its own.</h1>
     <p>Your funds stay in your vault. The agent gets a leash, and the leash shortens every hour you are away.</p>
+    <button class="btn" id="connect-wallet" data-testid="connect-wallet" style="align-self:flex-start">Connect wallet</button>
+    <div class="err" id="connect-err" hidden></div>
+    <div class="tiers" id="tier-rows"></div>
+  </section>
+
+  <!-- Create: this wallet has no vault -->
+  <section id="state-create" class="card solo" data-testid="state-create" hidden>
+    <h1>Create your vault</h1>
+    <p>One transaction: your vault, your agent's name under leash.eth, and the agent's mandate. You keep the admin bits, so only you can revoke it.</p>
+    <div class="field"><label for="agent-label">Agent name</label><div class="box"><input id="agent-label" data-testid="agent-label" type="text" placeholder="alice-agent" style="font: 500 16px 'IBM Plex Mono', monospace; width: 220px"><span class="quiet">.leash.eth</span></div></div>
+    <div class="field"><label for="agent-address">Agent address</label><div class="box"><input id="agent-address" data-testid="agent-address" type="text" placeholder="0x…" style="font: 500 14px 'IBM Plex Mono', monospace; width: 100%"></div></div>
+    <button class="btn" id="create-vault" data-testid="create-vault" style="align-self:flex-start">Create your vault</button>
+    <div class="err" id="create-err" data-testid="create-error" hidden></div>
+  </section>
+
+  <!-- State A: vault exists, no mandate yet -->
+  <section id="state-a" class="card solo" data-testid="state-a" hidden>
+    <span class="status tone-pause verified-chip"><i></i><span id="verify-name"></span></span>
+    <h1>Now prove you're here.</h1>
+    <p>Your vault exists and your agent has its name. Its authority starts at zero and only a verified human can raise it. The credential you use sets the ceiling.</p>
     <button class="btn" id="verify-first" data-testid="verify-with-world" style="align-self:flex-start">Verify with World</button>
     <div class="quiet" id="cancelled" data-testid="cancelled" hidden>Verification cancelled. Nothing was granted.</div>
-    <div class="tiers" id="tier-rows"></div>
   </section>
 
   <!-- State A': proof accepted, create the mandate -->
   <section id="state-a2" class="card solo" data-testid="state-a2" hidden>
     <span class="status tone-ok verified-chip"><i></i><span id="a2-verified">Verified</span></span>
     <h1 id="a2-headline" style="font-size:28px">Authority up to 0 USDC</h1>
-    <div class="field"><label>Agent name</label><div class="box"><span class="mono" style="font-size:16px">agent</span><span class="quiet">→ agent.leash.eth</span></div></div>
+    <div class="field"><label>Agent name</label><div class="box"><span class="mono" id="a2-name" data-testid="a2-name" style="font-size:16px"></span></div></div>
     <div class="field"><label>Pair</label><div class="box">HYPE / USDC</div></div>
     <div class="field"><label>In your vault</label><div class="box"><span class="mono" id="a2-balances" data-testid="a2-balances" style="font-size:16px"></span><button class="btn ghost" id="a2-deposit" data-testid="a2-deposit" style="margin-left:auto;height:36px;padding:0 14px;font-size:14px">Deposit</button></div></div>
     <div class="field"><label for="a2-cap">Starting authority</label>
@@ -142,7 +161,7 @@ a { color: var(--accent); }
     </div>
   </div>
 
-  <div class="viewer" id="viewer-note" data-testid="viewer-note" hidden>You're looking at Alice's vault. Owner actions are hers; scan the QR with your own World App to see what happens when someone who isn't Alice tries to renew her agent.</div>
+  <div class="viewer" id="viewer-note" data-testid="viewer-note" hidden>You're looking at someone else's vault. Owner actions are theirs; scan the QR with your own World App to see what happens when someone who isn't the owner tries to renew their agent. Connect your wallet to create your own.</div>
 
   <!-- States B and C: one layout, different values -->
   <section id="dashboard" data-testid="dashboard" hidden>
@@ -174,8 +193,8 @@ a { color: var(--accent); }
       </div>
       <div class="card mandate">
         <span class="eyebrow">Mandate</span>
-        <div class="name" id="agent-name" data-testid="agent-name">agent.leash.eth</div>
-        <div class="desc">Runs Alice's HYPE/USDC position on 1inch Aqua</div>
+        <div class="name" id="agent-name" data-testid="agent-name"></div>
+        <div class="desc">Runs your HYPE/USDC position on 1inch Aqua · agent <span class="mono" id="agent-addr"></span></div>
         <div class="perm" style="margin-top:18px"><div><div class="t">In your vault</div><div class="d">Only you can withdraw</div></div><span class="val mono" id="vault-balances" data-testid="vault-balances"></span></div>
         <div class="perms">
           <div class="perm"><div><div class="t">Close positions</div><div class="d">Never decays</div></div><span class="val" style="color:var(--accent)" data-testid="close-perm">Always</span></div>

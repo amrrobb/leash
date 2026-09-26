@@ -8,6 +8,8 @@ export const TIERS = {
   selfie: { key: "selfie", name: "Selfie Check", note: "Beta · liveness, medium assurance", cap: 2_000, bit: 1n << 52n },
 };
 const MANDATE = 1n << 40n;
+const ZERO = "0x0000000000000000000000000000000000000000";
+const SEPOLIA = "0xaa36a7";
 
 /** Same curve as Vault.limitAt: halve per 24h, linear inside the period, zero from 72h. */
 export function limitAt(base, elapsed) {
@@ -22,6 +24,7 @@ export function tierOf(roles) {
 }
 
 export const fmt = (n) => Math.floor(n).toLocaleString("en-US");
+export const short = (a) => (a ? `${a.slice(0, 6)}…${a.slice(-4)}` : "");
 
 function ago(sec) {
   if (sec < 3600) return "Just now";
@@ -29,10 +32,19 @@ function ago(sec) {
   return d > 0 ? `${d}d ${h}h ago` : `${h}h ago`;
 }
 
-/** Which of the four states to show. `session.tier` is set after a proof this page submitted. */
+/** Which screen to show.
+ * connect: no vault to look at and no wallet · create: wallet connected, no vault · verify: vault exists,
+ * no mandate yet, no proof this session · A2: proof accepted, fund and set the cap · BC: the dashboard. */
 export function screenOf(s, session = {}) {
-  if (BigInt(s.ownerCap) === 0n) return session.tier ? "A2" : "A";
+  if (!s) return session.account ? "create" : "connect";
+  if (BigInt(s.ownerCap) === 0n) return session.tier ? "A2" : "verify";
   return "BC";
+}
+
+/** "10,000 USDC · 1,000 HYPE" from raw balances. */
+export function balancesText(s) {
+  const usdc = Number(BigInt(s.vaultUsdc ?? 0)) / 1e6, hype = Number(BigInt(s.vaultHype ?? 0)) / 1e18;
+  return `${usdc.toLocaleString("en-US", { maximumFractionDigits: 0 })} USDC · ${hype.toLocaleString("en-US", { maximumFractionDigits: 0 })} HYPE`;
 }
 
 /** Everything the dashboard (B and C) renders, from one chain snapshot at chain time `now`. */
@@ -74,12 +86,6 @@ export function constraintsFor(IDKit, credentials) {
   return reqs.length === 1 ? reqs[0] : IDKit.any(...reqs);
 }
 
-/** "10,000 USDC · 1,000 HYPE" from raw balances. */
-export function balancesText(s) {
-  const usdc = Number(BigInt(s.vaultUsdc ?? 0)) / 1e6, hype = Number(BigInt(s.vaultHype ?? 0)) / 1e18;
-  return `${usdc.toLocaleString("en-US", { maximumFractionDigits: 0 })} USDC · ${hype.toLocaleString("en-US", { maximumFractionDigits: 0 })} HYPE`;
-}
-
 export const TAGS = {
   you: ["Verified", "ok"],
   owner: ["Owner", "ok"],
@@ -93,35 +99,78 @@ export const TAGS = {
 
 if (typeof document !== "undefined") {
   const $ = (id) => document.getElementById(id);
-  const session = { tier: null };
+  const session = { account: null, vault: null, tier: null, txs: null };
   let snap = null; // { state, fetchedAt }
+  let deployment = {};
 
-  // On a public host the owner routes need a token: open the page once as /app#demo=<DEMO_TOKEN> and it sticks.
-  try {
-    const m = location.hash.match(/demo=([^&]+)/);
-    if (m) {
-      localStorage.setItem("leash.demoToken", decodeURIComponent(m[1]));
-      history.replaceState(null, "", location.pathname);
-    }
-  } catch {}
-  const demoToken = () => { try { return localStorage.getItem("leash.demoToken") || ""; } catch { return ""; } };
+  // ---- wallet: the injected provider (MetaMask etc.). Browser tests inject a stub with the same interface.
+  const wallet = {
+    get provider() { return window.ethereum; },
+    async connect() {
+      if (!this.provider) throw new Error("No wallet found. Install MetaMask (or any injected wallet) and reload.");
+      const [account] = await this.provider.request({ method: "eth_requestAccounts" });
+      const chainId = await this.provider.request({ method: "eth_chainId" });
+      if (chainId !== SEPOLIA) {
+        try { await this.provider.request({ method: "wallet_switchEthereumChain", params: [{ chainId: SEPOLIA }] }); }
+        catch { throw new Error("Switch your wallet to Sepolia."); }
+      }
+      return account;
+    },
+    /** Sends calldata the backend built and waits for the receipt. */
+    async send({ to, data, value }) {
+      const hash = await this.provider.request({ method: "eth_sendTransaction", params: [{ from: session.account, to, data, value: value ?? "0x0" }] });
+      for (let i = 0; i < 120; i++) {
+        const r = await this.provider.request({ method: "eth_getTransactionReceipt", params: [hash] });
+        if (r) {
+          if (r.status !== "0x1") throw new Error(`Transaction reverted (${short(hash)})`);
+          return hash;
+        }
+        await new Promise((r) => setTimeout(r, 1500));
+      }
+      throw new Error("Transaction is taking too long; check your wallet");
+    },
+  };
 
   const api = async (path, body) => {
-    const headers = { "Content-Type": "application/json" };
-    if (demoToken()) headers["x-demo-token"] = demoToken();
-    const res = await fetch(path, body === undefined ? { headers } : { method: "POST", headers, body: JSON.stringify(body) });
+    const res = await fetch(path, body === undefined ? {} : { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) throw Object.assign(new Error(data.error ?? `HTTP ${res.status}`), { status: res.status });
     return data;
   };
-
+  const txFor = (kind, params = {}) => api(`/api/tx?${new URLSearchParams({ kind, ...(session.vault && kind !== "createVault" ? { vault: session.vault } : {}), ...params })}`);
   const chainNow = () => (snap ? Number(snap.state.timestamp) + (Date.now() - snap.fetchedAt) / 1000 : 0);
+  const isOwner = () => Boolean(snap && session.account && snap.state.owner?.toLowerCase() === session.account.toLowerCase());
+  const setErr = (id, msg) => { $(id).hidden = !msg; $(id).textContent = msg ?? ""; };
 
   function show(screen) {
-    for (const [id, on] of [["dashboard", screen === "BC"], ["state-a", screen === "A"], ["state-a2", screen === "A2"]]) {
+    for (const [id, on] of [["state-connect", screen === "connect"], ["state-create", screen === "create"], ["state-a", screen === "verify"], ["state-a2", screen === "A2"], ["dashboard", screen === "BC"]]) {
       const el = $(id);
       if (el) el.hidden = !on;
     }
+    document.body.dataset.screen = screen;
+  }
+
+  function renderHeader() {
+    $("owner-name").textContent = session.account ? short(session.account) : "Connect wallet";
+    $("vault-link").hidden = !session.vault;
+    if (session.vault) {
+      $("vault-link").textContent = snap?.state?.agentLabel ? `${snap.state.agentLabel}.leash.eth` : short(session.vault);
+      $("vault-link").href = `/app?vault=${session.vault}`;
+    }
+  }
+
+  function renderTierRows() {
+    $("tier-rows").replaceChildren(
+      ...[TIERS.selfie, TIERS.document, TIERS.orb].map((t) => {
+        const row = document.createElement("div");
+        row.className = "tier";
+        row.innerHTML = `<div><div class="tn"></div><div class="td"></div></div><span class="mono" style="font-size:17px"></span>`;
+        row.querySelector(".tn").textContent = t.name;
+        row.querySelector(".td").textContent = t.note;
+        row.querySelector(".mono").textContent = `${fmt(t.cap)} USDC`;
+        return row;
+      }),
+    );
   }
 
   const wave = window.LeashWave && $("leash-wave") ? window.LeashWave.mount($("leash-wave"), { ratio: 1 }) : null;
@@ -147,18 +196,18 @@ if (typeof document !== "undefined") {
     $("fill-text").textContent = v.fillText;
     $("clock").textContent = v.clockText;
     $("vault-balances").textContent = balancesText(snap.state);
+    $("agent-name").textContent = `${snap.state.agentLabel}.leash.eth`;
+    $("agent-addr").textContent = short(snap.state.agent);
     $("c-note").hidden = !v.cNote;
     $("c-note").textContent = v.cNote;
-    // Visitors without the owner's token see Alice's vault read-only: her actions are hidden, verify stays.
-    const owner = Boolean(demoToken()) || ["localhost", "127.0.0.1"].includes(location.hostname);
+    // Owner actions only for the wallet that owns this vault; anyone else looks.
+    const owner = isOwner();
     $("viewer-note").hidden = owner;
-    for (const id of ["revoke", "restore", "withdraw", "deposit"]) if (!owner) $(id).hidden = true;
-    if (!owner) { document.body.dataset.viewer = "1"; }
-    $("withdraw").hidden = !owner || v.tone !== "pause";
-    $("revoke").hidden = !owner || v.tone === "pause"; // close-only offers verify and withdraw, as designed
-    // Verifying renews the clock and tier; it cannot undo Alice's own revoke. Only she can restore it.
     $("verify-again").hidden = v.revoked;
+    $("revoke").hidden = !owner || v.tone === "pause";
     $("restore").hidden = !owner || !v.revoked;
+    $("withdraw").hidden = !owner || v.tone !== "pause";
+    $("deposit").hidden = !owner;
     document.body.dataset.state = v.tone === "pause" ? "C" : v.tone === "trim" ? "B-trim" : "B";
   }
 
@@ -185,106 +234,156 @@ if (typeof document !== "undefined") {
     );
   }
 
-  function render() {
-    if (!snap) return;
-    const screen = screenOf(snap.state, session);
-    show(screen);
-    if (screen === "BC") renderDashboard();
-    if (screen === "A2") renderA2();
-    document.body.dataset.screen = screen;
-  }
-
-  async function poll() {
-    try {
-      const state = await api("/api/state");
-      snap = { state, fetchedAt: Date.now() };
-      render();
-      $("dash-err").hidden = true;
-    } catch (err) {
-      $("dash-err").hidden = false;
-      $("dash-err").textContent = `Could not read the chain: ${err.message}`;
-      return;
-    }
-    try {
-      renderFeed(await api("/api/feed"));
-    } catch {
-      // A failed event read must not hide a healthy dashboard; the next poll retries.
-    }
-  }
-
-  async function ownerAction(button, path, body) {
-    button.disabled = true;
-    try {
-      await api(path, body ?? {});
-      await poll();
-    } catch (err) {
-      $("dash-err").hidden = false;
-      $("dash-err").textContent = err.message;
-    } finally {
-      button.disabled = false;
-    }
-  }
-
-
-  // ---------------------------------------------------------------- State A and A'
-
-  function renderTierRows() {
-    $("tier-rows").replaceChildren(
-      ...[TIERS.selfie, TIERS.document, TIERS.orb].map((t) => {
-        const row = document.createElement("div");
-        row.className = "tier";
-        row.innerHTML = `<div><div class="tn"></div><div class="td"></div></div><span class="mono" style="font-size:17px"></span>`;
-        row.querySelector(".tn").textContent = t.name;
-        row.querySelector(".td").textContent = t.note;
-        row.querySelector(".mono").textContent = `${fmt(t.cap)} USDC`;
-        return row;
-      }),
-    );
-  }
-
   function renderA2() {
     const t = TIERS[session.tier];
     $("a2-verified").textContent = `Verified · ${t.name}`;
     $("a2-headline").textContent = `Authority up to ${fmt(t.cap)} USDC`;
     $("a2-max").textContent = `max ${fmt(t.cap)} · can only go down`;
+    $("a2-name").textContent = snap ? `${snap.state.agentLabel}.leash.eth` : "";
     if (snap) $("a2-balances").textContent = balancesText(snap.state);
     const input = $("a2-cap");
     input.max = String(t.cap);
     if (!input.value) input.value = String(t.cap);
   }
 
+  function render() {
+    renderHeader();
+    const screen = screenOf(snap?.state, session);
+    show(screen);
+    if (screen === "BC") renderDashboard();
+    if (screen === "A2") renderA2();
+    if (screen === "verify") $("verify-name").textContent = snap ? `${snap.state.agentLabel}.leash.eth` : "";
+  }
+
+  async function poll() {
+    if (!session.vault) { render(); return; }
+    try {
+      const state = await api(`/api/state?vault=${session.vault}`);
+      snap = { state, fetchedAt: Date.now() };
+      render();
+      setErr("dash-err", null);
+    } catch (err) {
+      setErr("dash-err", `Could not read the chain: ${err.message}`);
+      return;
+    }
+    try {
+      renderFeed(await api(`/api/feed?vault=${session.vault}`));
+    } catch {
+      // A failed event read must not hide a healthy dashboard; the next poll retries.
+    }
+  }
+
+  /** Runs one owner transaction through the wallet, then refreshes. */
+  async function ownerTx(button, errId, kind, params) {
+    button.disabled = true;
+    setErr(errId, null);
+    try {
+      await wallet.send(await txFor(kind, params));
+      await poll();
+    } catch (err) {
+      setErr(errId, err.message);
+    } finally {
+      button.disabled = false;
+    }
+  }
+
+  // ---------------------------------------------------------------- connect and create
+
+  async function connect() {
+    setErr("connect-err", null);
+    try {
+      session.account = await wallet.connect();
+      try { localStorage.setItem("leash.account", session.account); } catch {}
+      if (!session.vault) {
+        const { vault } = await api(`/api/vault?owner=${session.account}`);
+        if (vault && vault !== ZERO) session.vault = vault;
+      }
+      await poll();
+    } catch (err) {
+      setErr("connect-err", err.message);
+      render();
+    }
+  }
+  $("connect-wallet").addEventListener("click", connect);
+  $("owner-name").addEventListener("click", () => { if (!session.account) connect(); });
+
+  $("create-vault").addEventListener("click", async (e) => {
+    const label = $("agent-label").value.trim().toLowerCase();
+    const agent = $("agent-address").value.trim();
+    setErr("create-err", null);
+    e.currentTarget.disabled = true;
+    try {
+      await wallet.send(await txFor("createVault", { agent, label }));
+      for (let i = 0; i < 20 && !session.vault; i++) {
+        const { vault } = await api(`/api/vault?owner=${session.account}`);
+        if (vault && vault !== ZERO) session.vault = vault;
+        else await new Promise((r) => setTimeout(r, 1500));
+      }
+      if (!session.vault) throw new Error("Vault created but not found yet; reload in a moment.");
+      history.replaceState(null, "", `/app?vault=${session.vault}`);
+      await poll();
+    } catch (err) {
+      setErr("create-err", err.message);
+    } finally {
+      e.currentTarget.disabled = false;
+    }
+  });
+
+  // ---------------------------------------------------------------- A′: fund and set the cap
+
+  const DEPOSIT = { usdc: String(10_000n * 1_000_000n), hype: String(1_000n * 10n ** 18n) };
+  async function deposit(button, errId) {
+    button.disabled = true;
+    setErr(errId, null);
+    try {
+      await wallet.send(await txFor("depositUsdc", { usdc: DEPOSIT.usdc }));
+      await wallet.send(await txFor("depositHype", { hype: DEPOSIT.hype }));
+      await poll();
+    } catch (err) {
+      setErr(errId, err.message);
+    } finally {
+      button.disabled = false;
+    }
+  }
+  $("a2-deposit").addEventListener("click", (e) => deposit(e.currentTarget, "a2-err"));
+  $("deposit").addEventListener("click", (e) => deposit(e.currentTarget, "dash-err"));
+
   function step(done, text, tx) {
     const el = document.createElement("div");
     el.className = done ? "done" : "";
-    el.textContent = `${done ? "☑" : "☐"} ${text}${tx ? `   ${tx.slice(0, 6)}…${tx.slice(-4)}` : ""}`;
+    el.textContent = `${done ? "☑" : "☐"} ${text}${tx ? `   ${short(tx)}` : ""}`;
     return el;
   }
 
   $("create-mandate").addEventListener("click", async (e) => {
     const t = TIERS[session.tier];
     const value = Math.floor(Number($("a2-cap").value));
-    $("a2-err").hidden = true;
+    setErr("a2-err", null);
     if (!(value >= 1 && value <= t.cap)) {
-      $("a2-err").hidden = false;
-      $("a2-err").textContent = `Choose between 1 and ${fmt(t.cap)} USDC. Authority can only go down from your credential's cap.`;
+      setErr("a2-err", `Choose between 1 and ${fmt(t.cap)} USDC. Authority can only go down from your credential's cap.`);
       return;
     }
     e.currentTarget.disabled = true;
     const tx = session.txs ?? {};
-    const steps = [step(true, "Role granted on agent.leash.eth", tx.grantTier), step(true, "Vault clock stamped", tx.verify)];
+    const steps = [step(true, `Tier granted on ${snap.state.agentLabel}.leash.eth`, tx.grantTier), step(true, "Vault clock stamped", tx.verify)];
     $("a2-steps").replaceChildren(...steps, step(false, "Starting authority set", "pending…"));
     try {
-      const out = await api("/api/demo/set-cap", { cap: String(BigInt(value) * 1_000_000n) });
-      $("a2-steps").replaceChildren(...steps, step(true, "Starting authority set", out.tx));
+      const hash = await wallet.send(await txFor("setCap", { cap: String(BigInt(value) * 1_000_000n) }));
+      $("a2-steps").replaceChildren(...steps, step(true, "Starting authority set", hash));
       session.tier = null;
       await poll();
     } catch (err) {
-      $("a2-err").hidden = false;
-      $("a2-err").textContent = err.message;
+      setErr("a2-err", err.message);
     } finally {
       e.currentTarget.disabled = false;
     }
   });
+
+  // ---------------------------------------------------------------- dashboard owner actions
+
+  $("revoke").addEventListener("click", (e) => ownerTx(e.currentTarget, "dash-err", "revoke"));
+  $("restore").addEventListener("click", (e) => ownerTx(e.currentTarget, "dash-err", "restore"));
+  $("withdraw").addEventListener("click", (e) => ownerTx(e.currentTarget, "dash-err", "withdraw", { token: deployment.usdc ?? "", amount: snap?.state?.vaultUsdc ?? "0" }));
 
   // ---------------------------------------------------------------- World ID modal
 
@@ -316,14 +415,12 @@ if (typeof document !== "undefined") {
     }
   }
 
-  function closeModal() {
-    $("verify-modal").hidden = true;
-  }
+  const closeModal = () => { $("verify-modal").hidden = true; };
 
   async function startVerify() {
     const mine = ++attempt;
     $("cancelled").hidden = true;
-    $("vm-err").hidden = true;
+    setErr("vm-err", null);
     $("vm-link").hidden = true;
     $("qr").innerHTML = '<span class="quiet">Preparing…</span>';
     $("verify-modal").hidden = false;
@@ -342,48 +439,48 @@ if (typeof document !== "undefined") {
       const completion = await request.pollUntilCompletion({ pollInterval: 2000, timeout: 180_000 });
       if (mine !== attempt) return; // cancelled while waiting: ignore the result, send nothing
       if (!completion.success) throw new Error(completion.error === "user_rejected" ? "You declined in World App. Nothing was granted." : `World ID: ${completion.error}`);
-      const out = await api("/api/proof", completion.result);
+      const out = await api("/api/proof", { result: completion.result, vault: session.vault });
       session.tier = out.tier;
       session.txs = out.txs;
       closeModal();
       await poll();
-      if (screenOf(snap.state, session) === "A2") renderA2();
     } catch (err) {
       if (mine !== attempt) return;
-      $("vm-err").hidden = false;
-      $("vm-err").textContent = err.status === 503 ? "World ID isn't configured on this server yet." : err.message;
+      setErr("vm-err", err.status === 503 ? "World ID isn't configured on this server yet." : err.message);
     }
   }
 
   $("vm-cancel").addEventListener("click", () => {
     attempt++; // any in-flight poll result is now ignored
     closeModal();
-    if (!snap || screenOf(snap.state, session) === "A") $("cancelled").hidden = false;
+    if (screenOf(snap?.state, session) === "verify") $("cancelled").hidden = false;
   });
   $("verify-first").addEventListener("click", startVerify);
   $("verify-again").addEventListener("click", startVerify);
+
+  // ---------------------------------------------------------------- boot
+
   renderTierRows();
-
-  $("revoke").addEventListener("click", (e) => ownerAction(e.currentTarget, "/api/demo/revoke"));
-  $("withdraw").addEventListener("click", (e) => ownerAction(e.currentTarget, "/api/demo/withdraw"));
-  $("restore").addEventListener("click", (e) => ownerAction(e.currentTarget, "/api/demo/grant-mandate"));
-  const DEPOSIT = { usdc: String(10_000n * 1_000_000n), hype: String(1_000n * 10n ** 18n) };
-  $("deposit").addEventListener("click", (e) => ownerAction(e.currentTarget, "/api/demo/deposit", DEPOSIT));
-  $("a2-deposit").addEventListener("click", async (e) => {
-    e.currentTarget.disabled = true;
+  (async () => {
+    try { deployment = await api("/api/deployment"); } catch {}
+    const fromUrl = new URLSearchParams(location.search).get("vault");
+    if (fromUrl && /^0x[0-9a-fA-F]{40}$/.test(fromUrl)) session.vault = fromUrl;
+    // A wallet that connected before: pick it up silently if the provider still exposes it.
     try {
-      await api("/api/demo/deposit", DEPOSIT);
-      await poll();
-    } catch (err) {
-      $("a2-err").hidden = false;
-      $("a2-err").textContent = err.message;
-    } finally {
-      e.currentTarget.disabled = false;
-    }
-  });
-
-  window.leash = { session, api, poll, render, ownerAction, startVerify, $, get snap() { return snap; } };
-  poll();
-  setInterval(poll, 3000);
-  setInterval(render, 1000);
+      if (localStorage.getItem("leash.account") && wallet.provider) {
+        const accounts = await wallet.provider.request({ method: "eth_accounts" });
+        if (accounts?.[0]) {
+          session.account = accounts[0];
+          if (!session.vault) {
+            const { vault } = await api(`/api/vault?owner=${session.account}`);
+            if (vault && vault !== ZERO) session.vault = vault;
+          }
+        }
+      }
+    } catch {}
+    window.leash = { session, api, poll, render, startVerify, wallet, $, get snap() { return snap; } };
+    await poll();
+    setInterval(poll, 3000);
+    setInterval(render, 1000);
+  })();
 }
