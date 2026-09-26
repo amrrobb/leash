@@ -37,4 +37,9 @@
       }
     },
   };
+  // Announce through EIP-6963 as real extensions do, so the page's discovery path is the one under test.
+  const info = { uuid: "0f1e2d3c-0000-4000-8000-000000000001", name: "Fake wallet", icon: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg'/>", rdns: "xyz.leash.fake" };
+  const announce = () => window.dispatchEvent(new CustomEvent("eip6963:announceProvider", { detail: Object.freeze({ info, provider: window.ethereum }) }));
+  window.addEventListener("eip6963:requestProvider", announce);
+  announce();
 })();

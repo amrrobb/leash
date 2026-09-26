@@ -111,11 +111,40 @@ if (typeof document !== "undefined") {
   let snap = null; // { state, fetchedAt }
   let deployment = {};
 
-  // ---- wallet: the injected provider (MetaMask etc.). Browser tests inject a stub with the same interface.
+  // ---- wallet: EIP-6963 discovery first (every installed wallet announces itself, so Brave Wallet or another
+  // extension cannot swallow requests meant for Rabby/MetaMask), window.ethereum as the fallback.
+  // Browser tests inject a stub on window.ethereum with the same interface.
+  const discovered = new Map(); // rdns -> { info, provider }
+  window.addEventListener("eip6963:announceProvider", (e) => discovered.set(e.detail.info.rdns, e.detail));
+  window.dispatchEvent(new Event("eip6963:requestProvider"));
+  let chosen = null; // { info, provider }
   const wallet = {
-    get provider() { return window.ethereum; },
+    get provider() { return chosen?.provider ?? window.ethereum; },
+    get name() { return chosen?.info?.name ?? "your wallet"; },
+    /** One installed wallet: use it. Several: the connect card lists them and the click picks one. */
+    async pick() {
+      const list = [...discovered.values()];
+      let remembered = null;
+      try { remembered = localStorage.getItem("leash.wallet"); } catch {}
+      if (remembered && discovered.has(remembered)) return discovered.get(remembered);
+      if (list.length <= 1) return list[0] ?? null;
+      return new Promise((resolve) => {
+        const box = $("wallet-choice");
+        box.replaceChildren(...list.map((w) => {
+          const b = document.createElement("button");
+          b.className = "btn ghost"; b.type = "button"; b.dataset.testid = `wallet-${w.info.rdns}`;
+          const img = document.createElement("img"); img.src = w.info.icon; img.alt = ""; img.width = 20; img.height = 20;
+          b.append(img, ` ${w.info.name}`);
+          b.addEventListener("click", () => { box.hidden = true; resolve(w); });
+          return b;
+        }));
+        box.hidden = false;
+      });
+    },
     async connect() {
-      if (!this.provider) throw new Error("No wallet found. Install MetaMask (or any injected wallet) and reload.");
+      chosen = await this.pick();
+      if (chosen) { try { localStorage.setItem("leash.wallet", chosen.info.rdns); } catch {} }
+      if (!this.provider) throw new Error("No wallet found. Install Rabby or MetaMask (any injected wallet) and reload.");
       const [account] = await this.provider.request({ method: "eth_requestAccounts" });
       const chainId = await this.provider.request({ method: "eth_chainId" });
       if (chainId !== SEPOLIA) {
@@ -126,7 +155,7 @@ if (typeof document !== "undefined") {
     },
     /** Sends calldata the backend built and waits for the receipt. `onStage` receives a line for the UI. */
     async send({ to, data, value }, onStage = () => {}) {
-      onStage("Confirm the transaction in your wallet. If no window opened, click the wallet's icon in your browser bar.");
+      onStage(`Confirm the transaction in ${wallet.name}. If no window opened, click its icon in your browser bar.`);
       const hash = await this.provider.request({ method: "eth_sendTransaction", params: [{ from: session.account, to, data, value: value ?? "0x0" }] });
       onStage(`Sent ${short(hash)}. Waiting for Sepolia to include it…`);
       for (let i = 0; i < 120; i++) {
@@ -327,6 +356,7 @@ if (typeof document !== "undefined") {
     setErr("connect-err", null);
     try {
       session.account = await wallet.connect();
+      listen(wallet.provider);
       try { localStorage.setItem("leash.account", session.account); } catch {}
       if (!session.vault) {
         const { vault } = await api(`/api/vault?owner=${session.account}`);
@@ -353,8 +383,14 @@ if (typeof document !== "undefined") {
     }
     await poll();
   }
-  wallet.provider?.on?.("accountsChanged", (a) => adoptAccount(a).catch((err) => setErr("dash-err", err.message)));
-  wallet.provider?.on?.("chainChanged", () => location.reload());
+  const listened = new WeakSet();
+  function listen(provider) {
+    if (!provider?.on || listened.has(provider)) return;
+    listened.add(provider);
+    provider.on("accountsChanged", (a) => adoptAccount(a).catch((err) => setErr("dash-err", err.message)));
+    provider.on("chainChanged", () => location.reload());
+  }
+  listen(wallet.provider);
   $("owner-name").addEventListener("click", () => { if (!session.account) connect(); });
 
   $("use-demo-agent").addEventListener("click", () => {
@@ -532,6 +568,8 @@ if (typeof document !== "undefined") {
     if (fromUrl && /^0x[0-9a-fA-F]{40}$/.test(fromUrl)) session.vault = fromUrl;
     // A wallet that connected before: pick it up silently if the provider still exposes it.
     try {
+      const remembered = localStorage.getItem("leash.wallet");
+      if (remembered && discovered.has(remembered)) { chosen = discovered.get(remembered); listen(wallet.provider); }
       if (localStorage.getItem("leash.account") && wallet.provider) {
         const accounts = await wallet.provider.request({ method: "eth_accounts" });
         if (accounts?.[0]) {
