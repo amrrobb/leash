@@ -47,6 +47,7 @@ The root `foundry.toml` mirrors swap-vm (0.8.30, via-IR, 700 runs) and sets `tes
 | `WORLD_VERIFY_URL` | backend | Default `https://developer.worldcoin.org/api/v4/verify` (`/{rp_id}` is appended) |
 | `WORLD_ENVIRONMENT` | backend | Default `staging`; `production` for a real World App |
 | `WORLD_STAGING_TOKEN` | backend | From `set_world_id_staging_verification`; sent as `x-staging-verification-token` |
+| `WORLD_CREDENTIALS` | backend → page | Comma list. `proof_of_human` for the simulator (it completes only a single PoH request); default all four for a real phone |
 | `DEMO_OWNER_KEY` | backend | Enables `/api/demo/*` (Alice's owner actions). Loopback-only unless `DEMO_TOKEN` is set and sent as `x-demo-token` |
 | `RPC_URL`, `DEPLOYMENTS`, `DB_PATH`, `PORT` | backend | Defaults: `SEPOLIA_RPC`, `deployments/sepolia.json`, `backend/leash-<vault>.db`, `8787` |
 
@@ -82,7 +83,7 @@ Configured through the World Developer Portal MCP (`claude mcp add worldcoin-dev
 1. `get_team_context` → app `app_29bb7ef1643470c4e5535a8468422e24` ("Leash", production).
 2. `configure_world_id { app_id, generate_signing_key: true }` → `rp_id` `rp_069e54311421c6ec`. The signing key is returned **once**; it went straight into `.env` as `WORLD_RP_SIGNING_KEY`. Poll `get_world_id_registration_status` until production and staging are `registered`.
 3. `create_world_id_action { app_id, action: "leash-verify" }`.
-4. For staging proofs (World's simulator, no phone): `set_world_id_staging_verification { app_id, enabled: true }` opens a 24 h window and returns a token → `WORLD_STAGING_TOKEN`. The backend sends it as `x-staging-verification-token` on every verify call. Set `WORLD_ENVIRONMENT=staging`.
+4. For staging proofs (World's simulator, no phone): `set_world_id_staging_verification { app_id, enabled: true }` opens a 24 h window and returns a token → `WORLD_STAGING_TOKEN`. The backend sends it as `x-staging-verification-token` on every verify call. Set `WORLD_ENVIRONMENT=staging` and `WORLD_CREDENTIALS=proof_of_human`. To complete a request: add the Simulator MCP (`https://simulator.worldcoin.org/api/mcp`, no key) and call `complete_test_request { connect_url: <the page's "Open in World App" link> }`, or paste that link at simulator.worldcoin.org.
 5. For a real phone: `WORLD_ENVIRONMENT=production`, no staging token, and Alice needs a **credential in World App**: Selfie Check (in-app, Beta), an NFC passport, or an Orb visit. World App alone proves nothing.
 6. First real proof: a rejection logs `proof rejected (...)` with the result's shape. Record the identifiers in NOTES.md.
 
