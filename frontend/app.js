@@ -390,7 +390,7 @@ if (typeof document !== "undefined") {
     if (next) {
       const { vault } = await api(`/api/vault?owner=${next}`).catch(() => ({}));
       if (vault && vault !== ZERO) { session.vault = vault; history.replaceState(null, "", `/app?vault=${vault}`); }
-      else if (!new URLSearchParams(location.search).get("vault")) { session.vault = null; snap = null; history.replaceState(null, "", "/app"); } // no vault: create one
+      else { session.vault = null; snap = null; history.replaceState(null, "", "/app"); } // no vault of its own: the Create screen
     }
     await poll();
   }
