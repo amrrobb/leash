@@ -31,11 +31,11 @@ test("used nonces survive a restart", () => {
   assert.equal(b.consumeNonce("n1", 1_000), false);
 });
 
-test("a human can re-verify for the same vault but not back a second one", () => {
+test("a human can re-verify for the same vault and may have a second one", () => {
   const s = openStore(dbFile());
   assert.equal(s.bindHuman("0xabc", "0xVault1", "selfie"), true);
   assert.equal(s.bindHuman("0xabc", "0xvault1", "orb"), true);
-  assert.equal(s.bindHuman("0xabc", "0xVault2", "selfie"), false);
+  assert.equal(s.bindHuman("0xabc", "0xVault2", "selfie"), true, "the same human may have a second vault; the binding is per vault");
 });
 
 test("a vault has one human: a second person is refused until the owner resets", () => {
