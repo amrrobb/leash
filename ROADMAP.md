@@ -16,4 +16,4 @@ Ordered. One item at a time; each is ticked only when its tests pass and it is p
 - 1inch mentor answer: Vault as Aqua maker
 - ~~Sepolia redeploy~~ done 2026-09-26: Vault v2 + router live, agent/backend/taker funded from Alice.
 - ~~First real World proof~~ done: identifier `proof_of_human`, nonce 66-char hex, matches the e2e fake. Still untested: a real phone (production) with Selfie Check / passport.
-- Timing on real Sepolia: decay starts at `verify()`, and A′ needs ~40–60 s of receipts plus a click, so B first shows ~1,000–1,300 of 2,000. Decide: accept, lower SPEED, or stamp at Create mandate.
+- Timing on real Sepolia (measured 2026-09-26): verify → B took 24 s, B first showed 11,928 of 15,000 (orb tier); the 10,000 trade landed 60 s after verify and was trimmed to 7,500; C at 182 s. Decide: accept (recommended), lower SPEED, or stamp at Create mandate.

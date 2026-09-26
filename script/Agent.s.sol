@@ -54,9 +54,11 @@ contract Agent is Script {
             IERC20(usdc).approve(router, amount);
             (uint256 amountIn, uint256 amountOut,) = ISwapVM(router).swap(order, amount, _takerData(taker, usdc < hype));
             vm.stopBroadcast();
+            // Printed from forge's pre-broadcast simulation, seconds before the block that mines the swap.
+            // The mined fill can be smaller: the cap keeps decaying. The router's Swapped event is the truth.
             console.log("asked (USDC)", amount);
-            console.log("filled (USDC)", amountIn);
-            console.log("received (HYPE wei)", amountOut);
+            console.log("simulated fill (USDC)", amountIn);
+            console.log("simulated received (HYPE wei)", amountOut);
         } else {
             revert("ACTION must be ship, dock or trade");
         }
