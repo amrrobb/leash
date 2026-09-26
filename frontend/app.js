@@ -123,9 +123,11 @@ if (typeof document !== "undefined") {
       }
       return account;
     },
-    /** Sends calldata the backend built and waits for the receipt. */
-    async send({ to, data, value }) {
+    /** Sends calldata the backend built and waits for the receipt. `onStage` receives a line for the UI. */
+    async send({ to, data, value }, onStage = () => {}) {
+      onStage("Confirm the transaction in your wallet. If no window opened, click the wallet's icon in your browser bar.");
       const hash = await this.provider.request({ method: "eth_sendTransaction", params: [{ from: session.account, to, data, value: value ?? "0x0" }] });
+      onStage(`Sent ${short(hash)}. Waiting for Sepolia to include it…`);
       for (let i = 0; i < 120; i++) {
         const r = await this.provider.request({ method: "eth_getTransactionReceipt", params: [hash] });
         if (r) {
@@ -320,12 +322,16 @@ if (typeof document !== "undefined") {
   });
 
   $("create-vault").addEventListener("click", async (e) => {
+    const button = e.currentTarget; // null after the first await: keep the reference
     const label = $("agent-label").value.trim().toLowerCase();
     const agent = $("agent-address").value.trim();
+    const status = (msg) => setErr("create-status", msg);
     setErr("create-err", null);
-    e.currentTarget.disabled = true;
+    button.disabled = true;
     try {
-      await wallet.send(await txFor("createVault", { agent, label }));
+      status("Building the transaction…");
+      await wallet.send(await txFor("createVault", { agent, label }), status);
+      status("Confirmed. Looking up your vault…");
       for (let i = 0; i < 20 && !session.vault; i++) {
         const { vault } = await api(`/api/vault?owner=${session.account}`);
         if (vault && vault !== ZERO) session.vault = vault;
@@ -337,7 +343,8 @@ if (typeof document !== "undefined") {
     } catch (err) {
       setErr("create-err", err.message);
     } finally {
-      e.currentTarget.disabled = false;
+      status(null);
+      button.disabled = false;
     }
   });
 

@@ -122,6 +122,7 @@ a { color: var(--accent); }
     <div class="field"><label for="agent-address">Agent’s wallet address <span class="quiet">— the bot that will run your position, not you</span></label><div class="box"><input id="agent-address" data-testid="agent-address" type="text" placeholder="0x…" style="font: 500 14px 'IBM Plex Mono', monospace; width: 100%"><button class="btn ghost" id="use-demo-agent" data-testid="use-demo-agent" type="button" style="margin-left:auto;height:36px;padding:0 14px;font-size:14px;white-space:nowrap">Use the Leash demo agent</button></div>
       <p class="quiet" style="margin:0">Any agent works: it needs only two calls on your vault, <span class="mono">ship</span> and <span class="mono">dock</span>. The demo agent is the one running in the terminal.</p></div>
     <button class="btn" id="create-vault" data-testid="create-vault" style="align-self:flex-start">Create your vault</button>
+    <div class="quiet" id="create-status" data-testid="create-status" hidden></div>
     <div class="err" id="create-err" data-testid="create-error" hidden></div>
   </section>
 
