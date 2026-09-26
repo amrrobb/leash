@@ -93,8 +93,9 @@ Lost the signing key? `rotate_world_id_signing_key { app_id }` returns a new one
 ## 6. Run
 
 ```bash
-cd backend && DEMO_OWNER_KEY=$ALICE_KEY npm start        # http://localhost:8787, serves frontend/
+cd backend && DEMO_OWNER_KEY=$OWNER_KEY npm start        # http://localhost:8787 = landing page, /app = dashboard
 ```
+The landing (`frontend/landing/`) is a single-screen liquid-glass hero: a looping background video drawn into a canvas behind an SVG refraction filter. It hot-links a CloudFront video asset; if that link dies, swap the `src` on `#bg-video` for any bright 16:9 loop. Standalone preview without the backend: `node frontend/landing/serve.mjs` (port 8123). Headless Chromium cannot decode the H.264 video, so screenshot it with real Chrome (`channel: "chrome"`).
 Agent and market (`SALT` names the position; reuse it for trade and dock). Any pair works as long as one leg is USDC: `OTHER=<token>` picks the other token (default: the demo HYPE), `POOL_USDC` / `POOL_OTHER` set the pool sizes. Demo tokens mint themselves; a real token must already be in the Vault.
 ```bash
 DEPLOYMENT=deployments/sepolia.json SALT=1 ACTION=ship  AGENT_KEY=$AGENT_KEY forge script script/Agent.s.sol --rpc-url $SEPOLIA_RPC --broadcast

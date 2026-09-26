@@ -18,7 +18,8 @@ ETHGlobal Tokyo 2026. Alice lets an agent run her 1inch Aqua position from her o
 | `MandateAquaRouter` | `src/MandateAquaRouter.sol` | The stock Aqua SwapVM router plus `0x2f`. 22,493 B. |
 | ENSv2 | Alice's own `UserRegistry` | `agent.leash.eth` belongs to Alice; the agent holds the MANDATE role bit; the backend holds tier-admin at the registry root, so it can set tiers but never grant or revoke the mandate. |
 | World ID v4 | `backend/` | Signs `rp_context`, forwards the proof untouched to the Developer Portal, single-use nonces in SQLite, one human per Vault, then two transactions: grant the tier bit and stamp the Vault. |
-| Dashboard | `frontend/` | One HTML page + one JS file, served by the backend. Four states: A (no mandate), A′ (create mandate), B (operating / trimming), C (close-only). |
+| Landing | `frontend/landing/` | Single-screen hero at `/`: video, liquid-glass card, slide-in menu, vanilla HTML/CSS/JS. "Open the dashboard" fades into `/app`. |
+| Dashboard | `frontend/` | One HTML page + one JS file, served by the backend at `/app`. Four states: A (no mandate), A′ (create mandate), B (operating / trimming), C (close-only). |
 | Agent + market | `agent/` | `loop.mjs` opens, re-ranges, gets refused at zero, closes and resumes on its own; `market.mjs` trades random sizes against it. Both are plain scripts with their own keys: Leash bounds them, it does not run them. |
 
 Numbers measured on a Sepolia fork against the real ENSv2 contracts: gate overhead **26.6k gas per swap**. `ship` costs 256k gas and `capNow` costs 33.4k.
