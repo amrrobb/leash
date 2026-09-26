@@ -14,7 +14,7 @@
   --rule: #EDEAE1;
   --trim-ink: #6B3F0A;
   /* the source video is a grey iridescent sphere; this pulls it into the Leash green */
-  --tint: sepia(0.55) hue-rotate(88deg) saturate(1.35) brightness(1.03);
+  --tint: sepia(0.28) hue-rotate(78deg) saturate(1.05) brightness(1.02);
 }
 
 *, *::before, *::after { box-sizing: border-box; }
