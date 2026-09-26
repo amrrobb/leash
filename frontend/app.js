@@ -529,27 +529,65 @@ if (typeof document !== "undefined") {
 
   const closeModal = () => { $("verify-modal").hidden = true; };
 
+  // World ID 3.0 phones cannot answer a constraint request (any of several credentials); only the presets carry a
+  // legacy fallback, and a preset is one credential. So: ask with constraints first, and when World App answers
+  // world_id_4_not_available, let the human pick one credential and ask again with that preset.
+  const LEGACY_PRESETS = [
+    ["proofOfHuman", "Orb", "15,000 USDC"],
+    ["passport", "Passport", "7,500 USDC"],
+    ["selfieCheckLegacy", "Selfie Check", "2,000 USDC"],
+  ];
+  function pickLegacyPreset() {
+    return new Promise((resolve) => {
+      const box = $("vm-legacy");
+      $("vm-text").textContent = "Your World App uses World ID 3.0, which answers one credential at a time. Pick the one you hold:";
+      $("qr").innerHTML = "";
+      $("vm-link").hidden = true;
+      box.replaceChildren(...LEGACY_PRESETS.map(([preset, name, cap]) => {
+        const b = document.createElement("button");
+        b.className = "wallet-row"; b.type = "button"; b.dataset.testid = `legacy-${preset}`;
+        b.append(name, Object.assign(document.createElement("span"), { className: "mono quiet", textContent: cap, style: "margin-left:auto" }));
+        b.addEventListener("click", () => { box.hidden = true; resolve(preset); });
+        return b;
+      }));
+      box.hidden = false;
+    });
+  }
+
   async function startVerify() {
     const mine = ++attempt;
     $("cancelled").hidden = true;
     setErr("vm-err", null);
     $("vm-link").hidden = true;
+    $("vm-legacy").hidden = true;
+    $("vm-text").textContent = "Pick a credential in the app. It sets how much authority the agent gets.";
     $("qr").innerHTML = '<span class="quiet">Preparing…</span>';
     $("verify-modal").hidden = false;
     try {
-      const ctx = await api("/api/rp-context", {});
       const IDKit = await loadIDKit();
-      const request = await IDKit.request({
-        app_id: ctx.app_id,
-        action: ctx.action,
-        rp_context: ctx.rp_context,
-        allow_legacy_proofs: ctx.allow_legacy_proofs === true,
-        environment: ctx.environment,
-      }).constraints(constraintsFor(IDKit, ctx.credentials));
-      if (mine !== attempt) return;
-      drawQR(request.connectorURI);
-      const completion = await request.pollUntilCompletion({ pollInterval: 2000, timeout: 180_000 });
-      if (mine !== attempt) return; // cancelled while waiting: ignore the result, send nothing
+      let preset = null;
+      let completion;
+      for (;;) {
+        const ctx = await api("/api/rp-context", {}); // a fresh single-use nonce for every request
+        const builder = IDKit.request({
+          app_id: ctx.app_id,
+          action: ctx.action,
+          rp_context: ctx.rp_context,
+          allow_legacy_proofs: ctx.allow_legacy_proofs === true,
+          environment: ctx.environment,
+        });
+        const request = preset ? await builder.preset(IDKit[preset]()) : await builder.constraints(constraintsFor(IDKit, ctx.credentials));
+        if (mine !== attempt) return;
+        drawQR(request.connectorURI);
+        completion = await request.pollUntilCompletion({ pollInterval: 2000, timeout: 180_000 });
+        if (mine !== attempt) return; // cancelled while waiting: ignore the result, send nothing
+        if (!completion.success && completion.error === "world_id_4_not_available" && !preset && ctx.allow_legacy_proofs === true) {
+          preset = await pickLegacyPreset();
+          if (mine !== attempt) return;
+          continue;
+        }
+        break;
+      }
       if (!completion.success) throw new Error(completion.error === "user_rejected" ? "You declined in World App. Nothing was granted." : `World ID: ${completion.error}`);
       const out = await api("/api/proof", { result: completion.result, vault: session.vault });
       session.tier = out.tier;

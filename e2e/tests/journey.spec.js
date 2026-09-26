@@ -210,8 +210,16 @@ test.describe.serial("Leash journey on a Sepolia fork: any wallet, its own vault
     await expect(page.getByTestId("feed")).toContainText("Agent closed the position");
   });
 
-  test("C -> B recovery: the same human verifies again and the cap is restored on chain", async ({ request }) => {
-    await worldAnswers(page, "verify-again", () => window.__world.approve("selfie"));
+  test("C -> B recovery: the same human verifies again, from a World ID 3.0 phone, and the cap is restored on chain", async ({ request }) => {
+    // A 3.0 phone cannot answer the constraint request: the page offers one credential at a time and asks again with a preset.
+    await page.evaluate(() => { window.__world = null; window.__legacyPhone = true; });
+    await page.getByTestId("verify-again").click();
+    await expect(page.getByTestId("legacy-choice")).toBeVisible();
+    await page.screenshot({ path: shot("5-legacy-choice") });
+    await page.getByTestId("legacy-selfieCheckLegacy").click();
+    await page.waitForFunction(() => window.__world);
+    await page.evaluate(() => window.__world.approve("face")); // 3.0 verification_level for Selfie Check
+    await page.evaluate(() => { window.__legacyPhone = false; });
     await expect(page.getByTestId("status")).toHaveText("Operating");
     await expectAuthorityBetween(page, 1_800, 2_000);
     expect(usd((await state(request)).cap)).toBeGreaterThan(1_800);

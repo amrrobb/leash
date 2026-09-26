@@ -11,6 +11,14 @@ test("identifiers map to tiers and caps", () => {
   assert.equal(tierOf("something_new"), null);
 });
 
+test("World ID 3.0 verification levels map to the same tiers; device maps to nothing", () => {
+  assert.equal(tierOf("orb").name, "orb");
+  assert.equal(tierOf("document").name, "document");
+  assert.equal(tierOf("secure_document").name, "document");
+  assert.equal(tierOf("face").name, "selfie");
+  assert.equal(tierOf("device"), null);
+});
+
 test("the strongest credential wins", () => {
   const best = strongestCredential({
     responses: [

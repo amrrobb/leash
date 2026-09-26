@@ -7,12 +7,16 @@ export const ROLE = {
   SELFIE: 1n << 52n,
 };
 
-/** Credential identifier (IDKit v4 ResponseItem.identifier) -> Leash tier. Highest rank wins. */
+/** Credential identifier (IDKit v4 ResponseItem.identifier) -> Leash tier. Highest rank wins.
+ * A World ID 3.0 proof (allow_legacy_proofs) carries its verification_level instead: orb / document / secure_document / face. */
+const ORB = { name: "orb", bit: ROLE.ORB, cap: 15_000, rank: 3 };
+const DOCUMENT = { name: "document", bit: ROLE.DOCUMENT, cap: 7_500, rank: 2 };
+const SELFIE = { name: "selfie", bit: ROLE.SELFIE, cap: 2_000, rank: 1 };
 const TIERS = {
-  proof_of_human: { name: "orb", bit: ROLE.ORB, cap: 15_000, rank: 3 },
-  passport: { name: "document", bit: ROLE.DOCUMENT, cap: 7_500, rank: 2 },
-  mnc: { name: "document", bit: ROLE.DOCUMENT, cap: 7_500, rank: 2 },
-  selfie: { name: "selfie", bit: ROLE.SELFIE, cap: 2_000, rank: 1 },
+  proof_of_human: ORB, orb: ORB,
+  passport: DOCUMENT, mnc: DOCUMENT, document: DOCUMENT, secure_document: DOCUMENT,
+  selfie: SELFIE, face: SELFIE,
+  // "device" (3.0 phone-only) is deliberately absent: it proves a phone, not a human.
 };
 
 export function tierOf(identifier) {
