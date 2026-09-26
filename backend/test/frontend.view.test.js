@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { limitAt, tierOf, screenOf, dashboardView, constraintsFor, balancesText, applyPolicy, TIERS } from "../../frontend/app.js";
+import { limitAt, tierOf, screenOf, dashboardView, constraintsFor, presetFor, balancesText, applyPolicy, TIERS } from "../../frontend/app.js";
 
 const H = 3600;
 const MANDATE = 1n << 40n;
@@ -98,3 +98,10 @@ test("tier caps follow the chain's policy, not the page's defaults", () => {
   assert.equal(TIERS.document.cap, 7_500);
 });
 
+
+test("Selfie Check alone is requested as World's one-time preset; anything else stays a constraint", () => {
+  assert.equal(presetFor(["selfie"]), "selfieCheck");
+  assert.equal(presetFor(["proof_of_human"]), null);
+  assert.equal(presetFor(["proof_of_human", "selfie"]), null);
+  assert.equal(presetFor(undefined), null);
+});

@@ -96,6 +96,11 @@ export function constraintsFor(IDKit, credentials) {
   return reqs.length === 1 ? reqs[0] : IDKit.any(...reqs);
 }
 
+/** Selfie Check is a World ID App flow and World documents it as a one-time preset with legacy off, not a constraint. */
+export function presetFor(credentials) {
+  return credentials?.length === 1 && credentials[0] === "selfie" ? "selfieCheck" : null;
+}
+
 export const TAGS = {
   you: ["Verified", "ok"],
   owner: ["Owner", "ok"],
@@ -577,6 +582,7 @@ if (typeof document !== "undefined") {
     setErr("vm-err", null);
     $("vm-link").hidden = true;
     $("vm-legacy").hidden = true;
+    $("vm-title").textContent = "Scan with World App";
     $("vm-text").textContent = "Pick a credential in the app. It sets how much authority the agent gets.";
     $("qr").innerHTML = '<span class="quiet">Preparing…</span>';
     $("verify-modal").hidden = false;
@@ -586,14 +592,19 @@ if (typeof document !== "undefined") {
       let completion;
       for (;;) {
         const ctx = await api("/api/rp-context", {}); // a fresh single-use nonce for every request
+        const single = presetFor(ctx.credentials);
         const builder = IDKit.request({
           app_id: ctx.app_id,
           action: ctx.action,
           rp_context: ctx.rp_context,
-          allow_legacy_proofs: ctx.allow_legacy_proofs === true,
+          allow_legacy_proofs: single ? false : ctx.allow_legacy_proofs === true,
           environment: ctx.environment,
         });
-        const request = preset ? await builder.preset(IDKit[preset]()) : await builder.constraints(constraintsFor(IDKit, ctx.credentials));
+        if (single === "selfieCheck") {
+          $("vm-title").textContent = "Scan with World ID App";
+          $("vm-text").textContent = "Selfie Check runs in the World ID App (a separate app from World App). No Orb needed; if it isn't installed, the link guides you to it.";
+        }
+        const request = preset ? await builder.preset(IDKit[preset]()) : single ? await builder.preset(IDKit[single]()) : await builder.constraints(constraintsFor(IDKit, ctx.credentials));
         if (mine !== attempt) return;
         drawQR(request.connectorURI);
         completion = await request.pollUntilCompletion({ pollInterval: 2000, timeout: 420_000 });

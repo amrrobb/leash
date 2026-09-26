@@ -28,5 +28,5 @@
     return { constraints: async () => req(false), preset: async (p) => req(true, p) };
   };
   const preset = (type) => () => ({ type });
-  window.IDKit = { request, any: (...n) => ({ any: n }), CredentialRequest: (t) => ({ t }), proofOfHuman: preset("ProofOfHuman"), passport: preset("Passport"), selfieCheckLegacy: preset("SelfieCheckLegacy") };
+  window.IDKit = { request, any: (...n) => ({ any: n }), CredentialRequest: (t) => ({ t }), proofOfHuman: preset("ProofOfHuman"), passport: preset("Passport"), selfieCheck: preset("SelfieCheck"), selfieCheckLegacy: preset("SelfieCheckLegacy") };
 })();
