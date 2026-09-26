@@ -10,6 +10,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" />
   <link rel="stylesheet" href="/landing-b/styles.css" />
+  <script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js" } }</script>
+  <link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js" />
   <link rel="prefetch" href="/app" />
 </head>
 <body>
@@ -66,10 +68,9 @@
       </div>
 
       <div class="hero__visual" id="hero-visual" aria-hidden="true" title="Hover: the leash tightens">
-        <video class="visual__layer visual__video" id="hero-video"
-               autoplay muted loop playsinline preload="auto"
-               src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260816_125506_3a597378-ec85-4ebd-bd22-03b45508ac62.mp4"></video>
-        <canvas class="visual__layer visual__trim" id="hero-canvas"></canvas>
+        <!-- the mark built from beads (beads.js); the PNG stays if WebGL or the CDN module is unavailable -->
+        <img class="visual__fallback" id="hero-fallback" src="/brand/leash-logo-512-transparent.png" alt="" width="512" height="512">
+        <canvas class="visual__beads" id="hero-beads"></canvas>
       </div>
     </section>
 
@@ -485,6 +486,7 @@ if (ctx.query.tokenIn == capToken) {
   <script src="/leash-wave.js"></script>
   <script type="module" src="/landing-b/ui.js"></script>
   <script type="module" src="/landing-b/hero.js"></script>
+  <script type="module" src="/landing-b/beads.js"></script>
   <script type="module" src="/landing-b/story.js"></script>
 </body>
 </html>

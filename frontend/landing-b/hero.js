@@ -1,6 +1,6 @@
-// The first viewport of variant B: page-load choreography, the two-line typewriter, the live badge and
-// the hover crossfade on the visual pane. Everything degrades: no motion under prefers-reduced-motion,
-// static badge text if the API is unreachable, a still green pane if the video never decodes.
+// The first viewport of variant B: page-load choreography, the two-line typewriter and the live badge.
+// The visual pane is beads.js. Everything degrades: no motion under prefers-reduced-motion, static badge
+// text if the API is unreachable.
 const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 const $ = (id) => document.getElementById(id);
 const frame = $("frame");
@@ -60,39 +60,4 @@ if (!reduced) frame.classList.add("anim");
   } catch {
     // API unreachable: the fallback text is already in the markup.
   }
-})();
-
-// ---------- visual pane: hover crossfades to the ochre take of the same footage ----------
-(function pane() {
-  const pane = $("hero-visual"), video = $("hero-video"), canvas = $("hero-canvas");
-  if (!pane || !video || !canvas) return;
-  const ctx = canvas.getContext("2d");
-  let on = false, drawUntil = 0;
-
-  const set = (v) => {
-    on = v;
-    pane.classList.toggle("is-trim", on);
-    drawUntil = performance.now() + 500; // keep drawing through the 400ms fade-out
-  };
-  pane.addEventListener("pointerenter", (e) => { if (e.pointerType !== "touch") set(true); });
-  pane.addEventListener("pointerleave", (e) => { if (e.pointerType !== "touch") set(false); });
-  // No hover on touch: a tap toggles the take instead.
-  pane.addEventListener("click", () => { if (window.matchMedia("(hover: none)").matches) set(!on); });
-
-  // The ochre layer is the video's current frame drawn at the pane's size (object-fit: cover), so both
-  // layers show the same instant and the crossfade reads as one image changing tone.
-  function frameLoop(now) {
-    if ((on || now < drawUntil) && video.videoWidth > 0 && video.videoHeight > 0) {
-      const w = pane.clientWidth, h = pane.clientHeight;
-      if (w > 0 && h > 0) {
-        if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; }
-        const cover = Math.max(w / video.videoWidth, h / video.videoHeight);
-        const sw = w / cover, sh = h / cover;
-        const sx = (video.videoWidth - sw) / 2, sy = (video.videoHeight - sh) / 2;
-        try { ctx.drawImage(video, sx, sy, sw, sh, 0, 0, w, h); } catch { /* frame not decodable yet */ }
-      }
-    }
-    requestAnimationFrame(frameLoop);
-  }
-  requestAnimationFrame(frameLoop);
 })();
