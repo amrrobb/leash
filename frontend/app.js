@@ -158,11 +158,15 @@ if (typeof document !== "undefined") {
     if (!who || $(id) !== el) return;
     el.className = `identity ${who.registered ? "tone-ok" : "tone-pause"}`;
     el.replaceChildren();
-    if (who.registered) {
-      el.append(`ERC-8004 agent #${who.agentId}${who.name ? ` · ${who.name}` : ""}`);
-      const a = document.createElement("a");
-      a.href = `https://sepolia.etherscan.io/nft/${who.registry}/${who.agentId}`; a.target = "_blank"; a.rel = "noopener"; a.textContent = "registry";
-      el.append(" · ", a);
+    const a = document.createElement("a");
+    a.target = "_blank"; a.rel = "noopener"; a.textContent = "registry";
+    if (who.registered && who.agentId) {
+      el.append(`ERC-8004 agent #${who.agentId}${who.name ? ` · ${who.name}` : ""}`, " · ", a);
+      a.href = `https://sepolia.etherscan.io/nft/${who.registry}/${who.agentId}`;
+    } else if (who.registered) {
+      // Holds an agent token it did not register itself (transferred): identity unknown, but it is in the registry.
+      el.append("Holds an ERC-8004 agent token (transferred, no registration of its own)", " · ", a);
+      a.href = `https://sepolia.etherscan.io/token/${who.registry}?a=${address}`;
     } else el.append("Not in the ERC-8004 registry · Leash bounds it anyway");
     el.hidden = false;
   }

@@ -64,7 +64,10 @@ test.describe.serial("Leash journey on a Sepolia fork: any wallet, its own vault
     await expect(page.getByTestId("agent-address")).toHaveValue(keys.addr.agent);
     // The agent's ERC-8004 identity, read from the registry on the fork: informational, never a gate.
     await expect(page.getByTestId("create-identity")).toContainText(/ERC-8004 agent #\d+ · E2E agent/);
+    // 0x…dEaD holds an agent token someone burned there: in the registry, but with no registration of its own.
     await page.getByTestId("agent-address").fill("0x000000000000000000000000000000000000dEaD");
+    await expect(page.getByTestId("create-identity")).toContainText("Holds an ERC-8004 agent token");
+    await page.getByTestId("agent-address").fill(keys.addr.taker); // a fresh key: never registered
     await expect(page.getByTestId("create-identity")).toContainText("Not in the ERC-8004 registry");
     await page.getByTestId("use-demo-agent").click();
     await page.screenshot({ path: shot("1-create") });
