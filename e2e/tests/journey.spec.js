@@ -53,7 +53,20 @@ test.describe.serial("Leash journey on a Sepolia fork: any wallet, its own vault
     await expect(page.getByTestId("state-connect")).toBeVisible();
     await expect(page.locator(".tier")).toHaveCount(3);
     await page.screenshot({ path: shot("0-connect") });
+    // A second wallet announces itself (EIP-6963): the page must ask which one, and Cancel must be a clean exit.
+    await page.evaluate(() => {
+      const info = { uuid: "0f1e2d3c-0000-4000-8000-000000000002", name: "Other wallet", icon: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg'/>", rdns: "xyz.leash.other" };
+      window.dispatchEvent(new CustomEvent("eip6963:announceProvider", { detail: Object.freeze({ info, provider: { request: async () => { throw new Error("wrong wallet"); } } }) }));
+    });
     await page.getByTestId("connect-wallet").click();
+    await expect(page.getByTestId("wallet-modal")).toBeVisible();
+    await expect(page.getByTestId("wallet-choice").locator("button")).toHaveCount(2);
+    await page.screenshot({ path: shot("0-wallets") });
+    await page.getByTestId("wallet-cancel").click();
+    await expect(page.getByTestId("wallet-modal")).toBeHidden();
+    await expect(page.getByTestId("state-connect")).toBeVisible();
+    await page.getByTestId("connect-wallet").click();
+    await page.getByTestId("wallet-xyz.leash.fake").click();
     await expect(page.getByTestId("state-create")).toBeVisible();
     await expect(page.getByTestId("owner-name")).toHaveText(/^0x[0-9a-fA-F]{4}…[0-9a-fA-F]{4}$/);
   });

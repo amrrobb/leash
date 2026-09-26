@@ -129,20 +129,24 @@ if (typeof document !== "undefined") {
       if (remembered && discovered.has(remembered)) return discovered.get(remembered);
       if (list.length <= 1) return list[0] ?? null;
       return new Promise((resolve) => {
-        const box = $("wallet-choice");
-        box.replaceChildren(...list.map((w) => {
+        const modal = $("wallet-modal");
+        const close = (w) => { modal.hidden = true; resolve(w); };
+        $("wallet-choice").replaceChildren(...list.map((w) => {
           const b = document.createElement("button");
-          b.className = "btn ghost"; b.type = "button"; b.dataset.testid = `wallet-${w.info.rdns}`;
-          const img = document.createElement("img"); img.src = w.info.icon; img.alt = ""; img.width = 20; img.height = 20;
-          b.append(img, ` ${w.info.name}`);
-          b.addEventListener("click", () => { box.hidden = true; resolve(w); });
+          b.className = "wallet-row"; b.type = "button"; b.dataset.testid = `wallet-${w.info.rdns}`;
+          const img = document.createElement("img"); img.src = w.info.icon; img.alt = "";
+          b.append(img, w.info.name);
+          b.addEventListener("click", () => close(w));
           return b;
         }));
-        box.hidden = false;
+        $("wm-cancel").onclick = () => close(undefined);
+        modal.hidden = false;
       });
     },
     async connect() {
-      chosen = await this.pick();
+      const picked = await this.pick();
+      if (picked === undefined && discovered.size > 1) throw Object.assign(new Error("cancelled"), { cancelled: true });
+      chosen = picked ?? null;
       if (chosen) { try { localStorage.setItem("leash.wallet", chosen.info.rdns); } catch {} }
       if (!this.provider) throw new Error("No wallet found. Install Rabby or MetaMask (any injected wallet) and reload.");
       const [account] = await this.provider.request({ method: "eth_requestAccounts" });
@@ -364,7 +368,7 @@ if (typeof document !== "undefined") {
       }
       await poll();
     } catch (err) {
-      setErr("connect-err", err.message);
+      if (!err.cancelled) setErr("connect-err", err.message);
       render();
     }
   }
