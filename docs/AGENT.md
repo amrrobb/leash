@@ -50,7 +50,9 @@ vault.dock(h);
 
 `order` is built with `LeashOrder.build(vault, usdc, other, salt)` (the program `MandateGate → XYCSwap → Salt`); `tokens` must include the cap token (USDC). Everything else (which pair, how big, when) is the agent's own policy. An LLM agent gets these as two tools; a rebalancing service calls them from its loop; `agent/loop.mjs` is the 100-line reference that does exactly this.
 
-What the agent can never do, whatever it is: raise its cap, renew its own clock, transfer the name, escalate its role, or withdraw. Those live with Alice and with a human proof.
+Give it an identity first, so the owner who pastes its address sees who they are binding: `AGENT_KEY=0x… node agent/register.mjs --name "My agent"` registers the key in the ERC-8004 Identity Registry on Sepolia with an on-chain (data URI) registration file. The dashboard shows "ERC-8004 agent #N · name" next to the address; an unregistered agent is bounded exactly the same way, it just shows as unknown. The demo agent is #10531.
+
+What the agent can never do, whatever it is: raise its cap, renew its own clock, transfer the name, escalate its role, or withdraw. Those live with the owner and with a human proof.
 
 ## The attack (`agent/attack.mjs`)
 
@@ -80,11 +82,17 @@ Leash bounds whoever runs the loop. The loop here is a policy file and a timer b
 
 ## What the demo shows, in order
 
-1. Alice verifies with World; the cap appears by tier.
-2. The agent opens a position by itself.
-3. The market trades; large trades are trimmed as the cap decays.
-4. The cap reaches zero. The agent is refused, closes the position, and waits.
-5. Alice verifies again. The agent resumes.
-6. Alice revokes; the agent is refused and closes. Alice restores; it resumes.
+The agent exists before the human, and gets nothing until a human binds it.
+
+1. Terminal: the agent has its own key and an ERC-8004 identity (`register.mjs`, #10531). `loop.mjs` starts and waits: no vault, no name, no mandate.
+2. Browser: the owner connects, creates a vault, names the agent under leash.eth and pastes its address (the 8004 badge resolves). One transaction binds them.
+3. The owner verifies with World; the cap appears by tier. Deposit, set the cap. The terminal says "the human is back; resuming" and opens a position by itself.
+4. The market trades; large trades are trimmed as the cap decays.
+5. The cap reaches zero. The agent is refused, closes the position, and waits.
+6. The owner verifies again. The agent resumes.
+7. The owner revokes; the agent is refused and closes. The owner restores; it resumes. The owner withdraws.
+8. `attack.mjs`: six ways to get the money, six refusals on chain.
+
+Rehearsed end to end on real Sepolia on 2026-09-26 (vault 0x6C3366c58F0efB6CEB510Fa841A0C8e8A2979c38); the hosted feed shows every step.
 
 Measured on Sepolia (2026-09-26): gate cost 26.6k gas per swap; a 10,000 USDC ask trimmed to 7,500 at 24 demo-hours; zero at 72 demo-hours.
