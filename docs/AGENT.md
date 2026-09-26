@@ -37,6 +37,21 @@ The agent's state is one small file (which position is open). The chain is the r
 
 `agent/market.mjs` is the counter-party: every ~40 s it trades a random size (1,500–12,000 USDC) against the open position. Small trades fill in full; large ones are trimmed to the live cap; at zero they are refused. Nothing about it is special: it is a plain wallet calling the router.
 
+## Bring your own agent
+
+Leash is the permission layer, not the agent. Any software that holds the agent key can run under a leash; it needs two calls on the Vault and nothing else:
+
+```solidity
+// open: the Vault checks the ENS role and the live cap, approves Aqua, ships as maker
+bytes32 h = vault.ship(router, abi.encode(order), tokens, amounts);
+// close: always allowed for the agent, reads no ENS state
+vault.dock(h);
+```
+
+`order` is built with `LeashOrder.build(vault, usdc, other, salt)` (the program `MandateGate → XYCSwap → Salt`); `tokens` must include the cap token (USDC). Everything else (which pair, how big, when) is the agent's own policy. An LLM agent gets these as two tools; a rebalancing service calls them from its loop; `agent/loop.mjs` is the 100-line reference that does exactly this.
+
+What the agent can never do, whatever it is: raise its cap, renew its own clock, transfer the name, escalate its role, or withdraw. Those live with Alice and with a human proof.
+
 ## Why there is no "AI" inside the agent
 
 Leash bounds whoever runs the loop. The loop here is a policy file and a timer because that is enough to show every behaviour that matters: acting alone, being refused, closing safely, resuming. An LLM agent, a rebalancing service or a script would be bounded the same way, by the same contracts. Judges cannot verify that a bot is clever; they can verify what happens when it is not allowed.
