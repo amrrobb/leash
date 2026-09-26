@@ -45,6 +45,8 @@ test("rp_context is signed with the real IDKit signer and carries app and action
   assert.equal(ctx.rp_context.rp_id, "rp_x");
   assert.match(ctx.rp_context.signature, /^0x[0-9a-f]{130}$/);
   assert.ok(ctx.rp_context.expires_at > ctx.rp_context.created_at);
+  assert.deepEqual(ctx.credentials, ["proof_of_human", "passport", "mnc", "selfie"]);
+  assert.deepEqual(issueRpContext({ world: { ...world, credentials: ["proof_of_human"] }, store }).credentials, ["proof_of_human"]);
 });
 
 test("happy path: selfie -> grant SELFIE then stamp the Vault, in that order", async () => {

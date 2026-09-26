@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { limitAt, tierOf, screenOf, dashboardView, TIERS } from "../../frontend/app.js";
+import { limitAt, tierOf, screenOf, dashboardView, constraintsFor, TIERS } from "../../frontend/app.js";
 
 const H = 3600;
 const MANDATE = 1n << 40n;
@@ -68,3 +68,11 @@ test("C after revoke says so, even with time left", () => {
   assert.equal(v.revoked, true);
   assert.equal(v.cNote, "You revoked the mandate.");
 });
+
+test("constraints: one credential is a bare request, several are any()", () => {
+  const IDKit = { CredentialRequest: (t) => ({ t }), any: (...n) => ({ any: n }) };
+  assert.deepEqual(constraintsFor(IDKit, ["proof_of_human"]), { t: "proof_of_human" });
+  assert.deepEqual(constraintsFor(IDKit, ["proof_of_human", "selfie"]), { any: [{ t: "proof_of_human" }, { t: "selfie" }] });
+  assert.equal(constraintsFor(IDKit, []).any.length, 4);
+});
+

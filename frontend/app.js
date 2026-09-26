@@ -67,6 +67,13 @@ export function dashboardView(s, now) {
   };
 }
 
+/** One credential -> a single request (what World's simulator accepts); several -> World App offers any of them. */
+export function constraintsFor(IDKit, credentials) {
+  const list = credentials?.length ? credentials : ["proof_of_human", "passport", "mnc", "selfie"];
+  const reqs = list.map((c) => IDKit.CredentialRequest(c));
+  return reqs.length === 1 ? reqs[0] : IDKit.any(...reqs);
+}
+
 export const TAGS = {
   you: ["Verified", "ok"],
   owner: ["Owner", "ok"],
@@ -298,14 +305,7 @@ if (typeof document !== "undefined") {
         rp_context: ctx.rp_context,
         allow_legacy_proofs: false,
         environment: ctx.environment,
-      }).constraints(
-        IDKit.any(
-          IDKit.CredentialRequest("proof_of_human"),
-          IDKit.CredentialRequest("passport"),
-          IDKit.CredentialRequest("mnc"),
-          IDKit.CredentialRequest("selfie"),
-        ),
-      );
+      }).constraints(constraintsFor(IDKit, ctx.credentials));
       if (mine !== attempt) return;
       drawQR(request.connectorURI);
       const completion = await request.pollUntilCompletion({ pollInterval: 2000, timeout: 180_000 });

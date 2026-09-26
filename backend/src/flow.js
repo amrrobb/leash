@@ -13,6 +13,7 @@ export function issueRpContext({ world, store, sign = signRequest }) {
     app_id: world.appId,
     action: world.action,
     environment: world.environment,
+    credentials: world.credentials ?? ["proof_of_human", "passport", "mnc", "selfie"],
     rp_context: { rp_id: world.rpId, nonce: sig.nonce, created_at: sig.createdAt, expires_at: sig.expiresAt, signature: sig.sig },
   };
 }
