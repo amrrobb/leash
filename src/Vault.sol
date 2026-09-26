@@ -65,6 +65,7 @@ contract Vault {
     error NoMandate();
     error MandateEmpty();
     error UnknownStrategy();
+    error CapTokenMissing();
 
     modifier onlyOwner() {
         require(msg.sender == owner, NotOwner());
@@ -117,12 +118,16 @@ contract Vault {
         require(agentRoles & ROLE_MANDATE != 0, NoMandate());
         require(_capFrom(agentRoles) > 0, MandateEmpty());
 
+        bool hasCapToken;
         for (uint256 i = 0; i < tokens.length; i++) {
+            if (tokens[i] == capToken) hasCapToken = true;
             // Aqua.pull() transfers from the maker, so Aqua (not the app) needs the allowance.
             if (IERC20(tokens[i]).allowance(address(this), address(aqua)) < amounts[i]) {
                 IERC20(tokens[i]).forceApprove(address(aqua), type(uint256).max);
             }
         }
+        // Every position must have a leg the cap can bound; MandateGate refuses the rest anyway.
+        require(hasCapToken, CapTokenMissing());
         strategyHash = aqua.ship(app, strategy, tokens, amounts);
         _positions[strategyHash] = Position(app, tokens);
         emit Shipped(strategyHash, app, tokens, amounts);

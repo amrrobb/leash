@@ -69,6 +69,10 @@ abstract contract GateBase is Test {
 
     function _order(bytes memory program) internal view returns (ISwapVM.Order memory) {
         (address tokenA, address tokenB) = LeashOrder.sorted(address(usdc), address(hype));
+        return _order(tokenA, tokenB, program);
+    }
+
+    function _order(address tokenA, address tokenB, bytes memory program) internal view returns (ISwapVM.Order memory) {
         return MakerTraitsLib.build(MakerTraitsLib.Args({
             maker: address(vault),
             tokenA: tokenA,

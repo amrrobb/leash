@@ -4,6 +4,9 @@ pragma solidity 0.8.30;
 import { ISwapVM } from "swap-vm/interfaces/ISwapVM.sol";
 import { TakerTraitsLib } from "swap-vm/libs/TakerTraits.sol";
 import { XYCSwap } from "swap-vm/instructions/XYCSwap.sol";
+import { LeashOrder } from "../../src/LeashOrder.sol";
+import { Vault } from "../../src/Vault.sol";
+import { DemoToken } from "../../src/DemoToken.sol";
 import { Salt } from "swap-vm/instructions/Controls.sol";
 import { MandateGate } from "../../src/MandateGate.sol";
 import { IEAC } from "../../src/interfaces/IEAC.sol";
@@ -133,6 +136,30 @@ contract MandateGateTest is GateBase {
         emit log_named_uint("swap with gate", withGate);
         emit log_named_uint("swap without gate", without);
         emit log_named_uint("gate overhead (warm)", withGate - without);
+    }
+
+    // ---- a pool with no cap-token leg cannot be traded through the gate ----
+
+    function test_pairWithoutCapToken_reverts() public {
+        DemoToken weth = new DemoToken("WETH", "WETH", 18);
+        weth.mint(address(vault), 1_000e18);
+        (address a, address b) = LeashOrder.sorted(address(hype), address(weth));
+        ISwapVM.Order memory o = _order(a, b, bytes.concat(MandateGate.build(), XYCSwap.build(), Salt.build(uint64(9))));
+        address[] memory t = new address[](2);
+        uint256[] memory amt = new uint256[](2);
+        (t[0], t[1], amt[0], amt[1]) = (address(hype), address(weth), 100e18, 100e18);
+        // The Vault refuses to ship it at all...
+        vm.prank(agent);
+        vm.expectRevert(Vault.CapTokenMissing.selector);
+        vault.ship(address(router), abi.encode(o), t, amt);
+        // ...and even a strategy shipped by some other maker path is refused by the gate: ship via a raw Aqua call.
+        vm.startPrank(address(vault));
+        aqua.ship(address(router), abi.encode(o), t, amt);
+        vm.stopPrank();
+        hype.mint(address(taker), 1e18);
+        bytes memory td = _takerData(true, address(hype) == a, true);
+        vm.expectRevert(abi.encodeWithSelector(MandateGate.MandateTokenMissing.selector, address(vault), address(usdc)));
+        taker.swap(o, 1e18, td);
     }
 
     // ---- property: the USDC leg never exceeds what the mandate allows ----

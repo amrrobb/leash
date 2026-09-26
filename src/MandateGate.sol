@@ -20,6 +20,8 @@ interface IMandateVault {
 library MandateGate {
     error MandateRevoked(address maker);
     error MandateEmpty(address maker);
+    /// @notice The strategy has no leg in the cap token, so the cap could not bound it.
+    error MandateTokenMissing(address maker, address capToken);
 
     Opcode constant opcode = Opcode._2f;
 
@@ -49,6 +51,9 @@ library MandateGate {
                 uint256 maxIn = limit * ctx.swap.balanceIn / (ctx.swap.balanceOut - limit);
                 if (ctx.swap.amountIn > maxIn) ctx.swap.amountIn = maxIn;
             }
+        
+        } else {
+            revert MandateTokenMissing(maker, capToken);
         }
     }
 }

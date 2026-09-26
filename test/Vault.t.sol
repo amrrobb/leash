@@ -93,6 +93,15 @@ contract VaultTest is Test {
         assertEq(vault.baseCap(), 2_000e6);
     }
 
+    function test_ship_revertsWithoutCapToken() public {
+        address[] memory t = new address[](1);
+        uint256[] memory a = new uint256[](1);
+        (t[0], a[0]) = (address(hype), 100e18);
+        vm.prank(agent);
+        vm.expectRevert(Vault.CapTokenMissing.selector);
+        vault.ship(app, "s1", t, a);
+    }
+
     function test_ship_revertsAtCapZero() public {
         vm.warp(block.timestamp + 3 days);
         (address[] memory t, uint256[] memory a) = _tokens();
