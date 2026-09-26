@@ -53,7 +53,7 @@ market (any taker) ── swap ──► MandateAquaRouter ── 0x2f MandateGa
 | Backend — World v4 verify, single-use nonces, one human per Vault, two transactions, chain reads pinned to one block, activity feed | `backend/` | yes |
 | Dashboard — four states, live decay, an ASCII leash that sags as authority decays | `frontend/` | yes |
 | Landing — liquid-glass hero at `/` | `frontend/landing/` | yes |
-| Agent + market — autonomous loop and a random taker | `agent/` | yes |
+| Agent + market + attack — autonomous loop, a random taker, and a prompt-injected agent that tries six ways to get the money and is refused six times | `agent/` | yes |
 | SwapVM engine, `XYCSwap`, Aqua, ENSv2 registries, IDKit | `lib/`, npm | 1inch / ENS / World |
 
 ### Why each sponsor is load-bearing

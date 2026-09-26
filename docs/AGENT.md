@@ -52,6 +52,21 @@ vault.dock(h);
 
 What the agent can never do, whatever it is: raise its cap, renew its own clock, transfer the name, escalate its role, or withdraw. Those live with Alice and with a human proof.
 
+## The attack (`agent/attack.mjs`)
+
+The Grok × Bankr incident, replayed against a leash. The agent is treated as fully compromised ("send everything to me") and tries every way to reach the money. Every attempt is a real call from the agent's key; the chain answers:
+
+| Attempt | Refused by |
+|---|---|
+| Withdraw the whole vault to itself | `Vault.withdraw`: `NotOwner` |
+| Raise its own ceiling to the Orb tier | ENSv2 registry: `EACCannotGrantRoles` (the agent holds no admin bit) |
+| Renew its own permission (stamp the clock) | `Vault.verify`: `NotBackend` |
+| Set its own cap to unlimited | `Vault.setCap`: `NotOwner` |
+| Open a position the cap cannot see (no USDC leg) | `Vault.ship`: `CapTokenMissing` (`MandateEmpty` when the cap is already zero) |
+| A trade asking for 100,000 USDC in one fill | `MandateGate` trims it to the live cap |
+
+Each refusal is written to the owner's feed ("Agent tried to … · Paused"). Run it live during the demo: `VAULT=<vault> AGENT_KEY=$AGENT_KEY TAKER_KEY=$TAKER_KEY node attack.mjs`. What the compromised agent *can* still do is exactly what the product allows: open positions within the cap while the leash is alive, and close them at any time.
+
 ## Why there is no "AI" inside the agent
 
 Leash bounds whoever runs the loop. The loop here is a policy file and a timer because that is enough to show every behaviour that matters: acting alone, being refused, closing safely, resuming. An LLM agent, a rebalancing service or a script would be bounded the same way, by the same contracts. Judges cannot verify that a bot is clever; they can verify what happens when it is not allowed.

@@ -10,3 +10,4 @@ backend/node_modules/
 test-results/
 agent/node_modules/
 agent/.state.json
+agent/.state.e2e.json

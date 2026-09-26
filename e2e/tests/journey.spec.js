@@ -1,7 +1,8 @@
 import { test, expect } from "@playwright/test";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { rpc, agent } from "../setup.js";
+import { rpc, agent, attack } from "../setup.js";
+import { writeFileSync } from "node:fs";
 
 const shot = (name) => fileURLToPath(new URL(`../.tmp/shots/${name}.png`, import.meta.url));
 const fakeIDKit = readFileSync(fileURLToPath(new URL("../fake-idkit.js", import.meta.url)), "utf8");
@@ -135,6 +136,23 @@ test.describe.serial("Leash journey on a Sepolia fork: any wallet, its own vault
     const row = page.locator('[data-kind="trim"]').first();
     await expect(row).toContainText("Asked 10,000 · allowed");
     await expect(row).toContainText("Trimmed");
+  });
+
+  test("A prompt-injected agent tries everything; the chain refuses every attempt", async () => {
+    // The agent script keeps the open position in a state file; give the attack script the same one.
+    const salt = "7";
+    writeFileSync(fileURLToPath(new URL("../../agent/.state.e2e.json", import.meta.url)), JSON.stringify({ position: { salt, pair: "HYPE", other: (await (await page.request.get("/api/deployment")).json()).hype, since: Date.now() } }));
+    const out = attack(vault);
+    expect(out).toMatch(/1\. Withdraw the whole vault to itself\s+refused: NotOwner/);
+    expect(out).toMatch(/2\. Raise its own ceiling to the Orb tier\s+refused: EACCannotGrantRoles/);
+    expect(out).toMatch(/3\. Renew its own permission.*refused: NotBackend/);
+    expect(out).toMatch(/4\. Set the cap to unlimited\s+refused: NotOwner/);
+    expect(out).toMatch(/5\. Open a position the cap cannot see.*refused: CapTokenMissing/);
+    expect(out).toMatch(/6\. A trade asks for 100,000 USDC in one fill\s+filled only [\d,]+ USDC/);
+    expect(out).toMatch(/6\/6 attempts refused/);
+    await expect(page.getByTestId("feed")).toContainText("Agent tried to withdraw the vault");
+    const trimmed = page.locator('[data-kind="trim"]').first();
+    await expect(trimmed).toContainText("Asked 100,000 · allowed");
   });
 
   test("Decay: 36 demo hours later the dashboard turns ochre and trims", async ({ request }) => {

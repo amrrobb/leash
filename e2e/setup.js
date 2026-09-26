@@ -113,3 +113,13 @@ export function agent(action, extra = {}) {
   });
 }
 
+/** Runs agent/attack.mjs (the prompt-injected agent) against a vault on the fork. Returns its stdout. */
+export function attack(vault) {
+  const { keys } = JSON.parse(readFileSync(`${tmp}/keys.json`, "utf8"));
+  return execFileSync("node", ["attack.mjs"], {
+    cwd: `${root}agent`,
+    encoding: "utf8",
+    env: { ...process.env, RPC_URL: ANVIL, BACKEND, DEPLOYMENT: `${tmp}/deployment.json`, VAULT: vault, AGENT_KEY: keys.agent, TAKER_KEY: keys.taker, STATE: `${root}agent/.state.e2e.json` },
+  });
+}
+

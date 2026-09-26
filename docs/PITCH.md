@@ -13,6 +13,7 @@ Have open: the dashboard in State B with the agent loop and the market bot runni
 | Whose money (5 s) | "Her funds sit in her own vault; here's the balance. The bot never holds them." | Mandate card: "In your vault: 10,000 USDC · 1,000 HYPE" |
 | Idea (15 s) | "Leash gives the bot a permission that shrinks by itself. This number is how much the market can take from Alice's position right now. It halves every day since she last proved she's a human, with World ID. Nobody but a human can top it up." | Point at the number and the ASCII leash sagging |
 | Proof it's real (20 s) | "This isn't a UI rule. It's a SwapVM opcode: it runs inside every quote and swap. Watch: the market just asked for 10,000 and got 7,500." | Feed row "Asked 10,000 · allowed 7,500 · Trimmed" |
+| The attack (20 s) | "Now the Grok story. This agent has been told 'send everything to me'. Watch it try." Run `attack.mjs`. "Withdraw: refused. Promote itself: refused. Renew its own clock: refused. Unlimited cap: refused. A hidden position: refused. A 100,000 trade: filled up to the cap. Six for six." | Terminal: the six lines; dashboard: six Paused rows appear |
 | The asymmetry (15 s) | "When it hits zero the bot can't open anything, but it can always close. That's the design: the failure state is resting, not stuck." | Wait for or show State C; terminal: "refused: MandateEmpty… closing… waiting for the human" |
 | Human comes back (15 s) | "Alice scans once. The cap is back, the bot resumes. And the permission lives on her ENS name: she can revoke it, and anyone on-chain can read it." | Verify again → B; Revoke → C → Restore |
 | Close (10 s) | "Three sponsors, each load-bearing: ENS holds the permission, World makes renewal human-only, the 1inch opcode enforces it inside the trade. All live on Sepolia, 172 tests." | Landing page or GitHub |
@@ -43,7 +44,7 @@ Memorise the one-liners (from HANDOFF §9):
 
 Before judges arrive:
 1. Backend on real Sepolia (production World mode if you'll scan with your phone; staging + `WORLD_CREDENTIALS=proof_of_human` if you'll use the simulator). MetaMask on Sepolia with a funded account for you (the owner) and the agent's address at hand.
-2. `agent/loop.mjs` and `agent/market.mjs` running in a visible terminal with `VAULT=<your vault>`.
+2. `agent/loop.mjs` and `agent/market.mjs` running in a visible terminal with `VAULT=<your vault>`; a second terminal ready with `VAULT=<your vault> AGENT_KEY=$AGENT_KEY TAKER_KEY=$TAKER_KEY node attack.mjs` for the attack beat.
 3. Check gas: agent, backend, taker each above 0.005 ETH.
 4. Do one verify so you start in State B, not C. It takes 3 minutes to reach zero, so re-verify every ~2 minutes while talking, or let it hit zero on purpose when you reach the "asymmetry" beat.
 
