@@ -99,6 +99,7 @@ export function createApp(deps) {
     // "/" is the landing page when one exists, else the dashboard; "/app" is always the dashboard.
     if (path === "/app") path = "/index.html";
     if (path === "/" && existsSync(join(staticDir, "landing", "index.html"))) path = "/landing/index.html";
+    if (path === "/b") path = "/landing-b/index.html"; // variant landing, for side-by-side comparison
     const file = join(dir, path === "/" ? "index.html" : path);
     if (!file.startsWith(dir)) return json(res, 403, { error: "forbidden" });
     try {
