@@ -56,7 +56,7 @@ export function dashboardView(s, now) {
     tone: empty ? "pause" : low ? "trim" : "ok",
     statusLabel: empty ? "Close-only" : low ? "Trimming fills" : "Operating",
     statusText: empty ? "The agent can close positions, nothing else" : low ? "Large market trades are being cut down" : "The market can trade against you up to this much",
-    lastText: verified ? ago(elapsed) : "Never",
+    lastText: !verified ? "Never" : elapsed >= CUTOFF ? "Over 3 days ago" : ago(elapsed),
     tierName: tier ? tier.name : "no credential",
     zeroText: empty ? "Reached" : ld > 0 ? `in ~${ld}d ${lh}h` : `in ~${lh}h`,
     openText: empty ? "Paused" : "Allowed",

@@ -71,15 +71,21 @@
     </div>
 
     <nav class="nav">
-      <button class="nav__item" id="menu-open" type="button" aria-expanded="false" aria-controls="menu">
-        <svg class="icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <line x1="4" y1="6" x2="20" y2="6" /><line x1="4" y1="12" x2="20" y2="12" /><line x1="4" y1="18" x2="20" y2="18" />
-        </svg>
-        <span class="nav__label nav__label--menu">Menu</span>
-      </button>
-      <a class="nav__item" href="/app" data-enter>
-        <span class="nav__dot" aria-hidden="true"></span>
-        <span class="nav__label">Live on Sepolia · leash.eth</span>
+      <div class="nav__group">
+        <a class="nav__item nav__brand" href="/" aria-label="Leash">
+          <img class="nav__logo" src="/brand/leash-logo-512-transparent.png" alt="" width="26" height="26">
+          <span class="nav__wordmark">Leash</span>
+        </a>
+        <button class="nav__item" id="menu-open" type="button" aria-expanded="false" aria-controls="menu">
+          <svg class="icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <line x1="4" y1="6" x2="20" y2="6" /><line x1="4" y1="12" x2="20" y2="12" /><line x1="4" y1="18" x2="20" y2="18" />
+          </svg>
+          <span class="nav__label nav__label--menu">Menu</span>
+        </button>
+      </div>
+      <a class="nav__item nav__who" href="/app" data-enter>
+        <span class="nav__label nav__net">Sepolia</span>
+        <span class="nav__pill">leash.eth</span>
       </a>
     </nav>
 
@@ -90,12 +96,8 @@
           Give your agent a leash, not a key. Its authority decays every hour you’re away
           and comes back only when a verified human shows up.
         </p>
-        <a class="chamfer" href="/app" data-enter>
-          <span class="chamfer__glass" aria-hidden="true"></span>
-          <svg class="chamfer__outline" viewBox="0 0 260 48" preserveAspectRatio="none" aria-hidden="true">
-            <polygon points="14,0 260,0 260,34 246,48 0,48 0,14" fill="none" stroke="currentColor" stroke-width="1.5" vector-effect="non-scaling-stroke" />
-          </svg>
-          <span class="chamfer__label">Open the dashboard</span>
+        <a class="cta" href="/app" data-enter>
+          <span class="cta__label">Open the dashboard</span>
           <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <path d="M5 12h14" /><path d="m12 5 7 7-7 7" />
           </svg>
@@ -107,19 +109,19 @@
         <div class="card__frost" aria-hidden="true"></div>
         <div class="card__head">
           <h2 class="card__title">What the leash enforces</h2>
-          <span class="card__index">//01</span>
+          <span class="card__index">agent.leash.eth</span>
         </div>
         <div class="card__body">
           <div class="finding">
-            <h3 class="finding__title">Close positions — always</h3>
+            <div class="finding__row"><h3 class="finding__title">Close positions</h3><span class="finding__val finding__val--ok">Always</span></div>
             <p class="finding__text">The agent can wind down at any hour. A frozen bot that cannot exit is worse than no bot.</p>
           </div>
           <div class="finding">
-            <h3 class="finding__title">Open — only while the leash is alive</h3>
+            <div class="finding__row"><h3 class="finding__title">Open new ranges</h3><span class="finding__val finding__val--ok">While alive</span></div>
             <p class="finding__text">Authority halves every 24 hours from your last World ID proof and reaches zero in three days.</p>
           </div>
           <div class="finding">
-            <h3 class="finding__title">Market trades — trimmed to the cap</h3>
+            <div class="finding__row"><h3 class="finding__title">Market trades</h3><span class="finding__val finding__val--trim">Trimmed</span></div>
             <p class="finding__text">A SwapVM opcode reads the live cap inside every quote and swap. Ask 10,000, fill 7,500.</p>
           </div>
         </div>
