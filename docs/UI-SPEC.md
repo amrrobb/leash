@@ -99,6 +99,7 @@ Two cards side by side (760 px + flexible), then a full-width activity card belo
 | Progress bar (10 px, rounded) | fill = authority / granted; colour = accent / ochre / grey | `id="bar"` |
 | Sub-line left | Operating: "The market can trade against you up to this much" · Trimming: "Large market trades are being cut down" · Close-only: "The agent can close positions, nothing else" | `id="status-text"` |
 | Sub-line right | of **{granted}** granted (e.g. of 15,000 granted) | `id="cap-text"` |
+| **Leash wave** (ASCII, 72 × 9 monospace, ~11 fps) | A rope from the human `()` on the left to the agent `@` on the right. Taut `=====` and still at full authority; sags and ripples `~ \ /` as authority decays (ochre); at zero it lies on the ground as `.....` with the agent at the far end (grey). Drop-in: `frontend/leash-wave.js`, `LeashWave.mount(pre, {ratio}).setRatio(x).setTone("ok"\|"trim"\|"pause")` | `data-testid="leash-wave"` (a `<pre>`) |
 | Fact 1 | Last verified — **{Just now / 4h ago / 1d 14h ago / Never}** — via {tier name} | `id="last"`, `id="tier-name"` |
 | Fact 2 | Halves every — **24 hours** — unless you return | static |
 | Fact 3 | Reaches zero — **in ~2d 0h / Reached** — if nobody verifies | `data-testid="reaches-zero"` |
@@ -141,6 +142,13 @@ Row kinds and their pills:
 | trim | Market trade on HYPE/USDC | Asked 10,000 · allowed 7,500 USDC | Trimmed (ochre) |
 | blocked | Agent tried to open a new range | Authority is empty · waiting for you | Paused (grey) |
 | closed | Agent closed the position | Docked · funds never left your vault | Closed (grey) |
+
+### 6d. Deposit (planned, not built yet)
+
+Alice's funds enter the Vault by a plain token transfer to the Vault address. To make that visible:
+- Mandate card gets a line **In your vault: 10,000 USDC · 1,000 HYPE** (live balances), hook `data-testid="vault-balances"`.
+- State A′ gets a step **Deposit** before "Create mandate" (amounts per token, one transaction each), or a **Deposit** ghost button on the dashboard. In the demo the owner signer performs it; in production Alice's wallet does.
+- Feed row kind `owner`: "You deposited" · "10,000 USDC into your vault".
 
 ## 7. Transitions
 
