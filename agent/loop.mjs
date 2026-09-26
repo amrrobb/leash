@@ -2,7 +2,7 @@
 // timer, and when the human stops showing up it is refused, closes the position, and waits.
 // It never asks the human for anything; renewal is her side of the leash.
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
-import { deployment, forgeAgent, log, mandate, report, root, sleep, usd } from "./common.mjs";
+import { deployment, forgeAgent, log, mandate, report, resolveVault, root, sleep, usd } from "./common.mjs";
 
 const policy = JSON.parse(readFileSync(process.env.POLICY ?? `${root}agent/policy.json`, "utf8"));
 const statePath = process.env.STATE ?? `${root}agent/.state.json`;
@@ -78,6 +78,7 @@ async function tick() {
   }
 }
 
+await resolveVault();
 log("agent", `Leash agent · vault ${deployment.vault} · ${policy.pairs.length} pair(s) in policy`);
 for (;;) {
   try {

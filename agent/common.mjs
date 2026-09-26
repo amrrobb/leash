@@ -8,12 +8,29 @@ export const root = fileURLToPath(new URL("..", import.meta.url));
 export const rpcUrl = process.env.RPC_URL ?? process.env.SEPOLIA_RPC;
 export const deploymentPath = process.env.DEPLOYMENT ?? `${root}deployments/sepolia.json`;
 export const deployment = JSON.parse(readFileSync(deploymentPath, "utf8"));
-// The vault this agent works for. With the factory, every owner has their own: pass VAULT.
+// The vault this agent works for. With the factory, every owner has their own: pass VAULT, or OWNER to
+// resolve it from the factory (and wait for it, so the agent can be started before the human creates it).
 if (process.env.VAULT) deployment.vault = process.env.VAULT;
 export const backend = process.env.BACKEND ?? "http://127.0.0.1:8787";
 
 export const publicClient = createPublicClient({ chain: sepolia, transport: http(rpcUrl) });
 const vaultAbi = parseAbi(["function mandate() view returns (bool alive, uint256 cap, address token)"]);
+
+const factoryAbi = parseAbi(["function vaultOf(address owner) view returns (address)"]);
+const ZERO = "0x0000000000000000000000000000000000000000";
+
+/** With OWNER set, polls the factory until that wallet has a vault, then points the agent at it. */
+export async function resolveVault() {
+  if (!process.env.OWNER || process.env.VAULT) return deployment.vault;
+  if (!deployment.factory) throw new Error("OWNER needs a factory in the deployment file");
+  let said = false;
+  for (;;) {
+    const v = await publicClient.readContract({ address: deployment.factory, abi: factoryAbi, functionName: "vaultOf", args: [process.env.OWNER] });
+    if (v && v !== ZERO) { deployment.vault = v; return v; }
+    if (!said) { log("agent", `no vault for ${process.env.OWNER} yet; waiting for the human to create one`); said = true; }
+    await sleep(5000);
+  }
+}
 
 export async function mandate() {
   const [alive, cap, token] = await publicClient.readContract({ address: deployment.vault, abi: vaultAbi, functionName: "mandate" });
