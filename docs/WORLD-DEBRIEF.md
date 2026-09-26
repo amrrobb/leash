@@ -39,4 +39,6 @@ So the question World ID has to answer for us is narrow: *is a live human, the s
 
 **Selfie Check availability, for the record:** the credential page says "anyone with World ID App can complete the flow"; on our device the World ID App was gated as beta. The docs should state the rollout status per platform/region next to that sentence.
 
+**Simulator identity:** the simulator returns the same nullifier whichever identity is selected (confirmed by other teams on the event Discord). So "a second human is refused" cannot be shown live with it; it is covered by the backend and e2e tests with two nullifiers. World's own note on the prize page, "we are mocking proofs now, so you don't need the sandbox app", is why the judges' demo runs on staging.
+
 **Where the judges' demo runs:** the hosted app is in staging mode with World's simulator standing in for the phone, because no test account with a credential was available to us; the code path (IDKit request → bridge → server verify → role grant) is the production one. `agent/simulate-human.mjs` is the one-line stand-in.
