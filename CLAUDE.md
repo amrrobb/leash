@@ -1,6 +1,6 @@
 # Leash — ETHGlobal Tokyo 2026
 
-Read HANDOFF.md first. It is the source of truth for architecture, verified facts, and build order.
+Read HANDOFF.md first for the story and plan, then docs/INTEGRATION.md and docs/SETUP.md, which describe the system as built and override HANDOFF where they differ.
 
 ## Rules
 - Hackathon "From Scratch" track: every line is written during the event. Never copy from ../v0-mandate — read it only for facts.

@@ -5,6 +5,8 @@
 Event: ETHGlobal Tokyo, 25–27 Sep 2026. Solo. From Scratch track.
 Targets: ENS "Best Use of ENSv2" $6k · World "Best Use of IDKit" $7.5k · 1inch "Build an Aqua App" $5k.
 
+> As built: see docs/SETUP.md and docs/INTEGRATION.md. Where this file and those disagree, those are current (INTEGRATION.md lists every change and why).
+
 **Rule:** all code is written during the event. Pre-event exploration lives in `../leash-reference/v0-mandate/` — read it for facts, never copy it. Commit small and often from the first commit.
 
 ---

@@ -6,6 +6,7 @@ ETHGlobal Tokyo 2026. Alice lets an agent run her 1inch Aqua position from her o
 
 - Problem and use case: [docs/product.md](docs/product.md)
 - Architecture and verified facts: [HANDOFF.md](HANDOFF.md) · [ARCHITECTURE.md](ARCHITECTURE.md)
+- Setup and deploy: [docs/SETUP.md](docs/SETUP.md) · how the pieces connect: [docs/INTEGRATION.md](docs/INTEGRATION.md)
 - Integration log / sponsor feedback: [NOTES.md](NOTES.md)
 
 ## How it fits together
