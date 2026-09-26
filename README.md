@@ -1,6 +1,6 @@
-# Leash
+# Re:Leash
 
-> Permission for an AI agent that shrinks on its own unless a verified human keeps showing up.
+> **Leash**: permission for an AI agent that shrinks on its own unless a verified human keeps showing up. (Submitted to ETHGlobal Tokyo 2026 as *Re:Leash*; the product, the ENS names and the code say Leash.)
 
 Built solo at **ETHGlobal Tokyo 2026** (From Scratch track). **Live: [leash.robbyn.xyz](https://leash.robbyn.xyz)** (dashboard at [/app](https://leash.robbyn.xyz/app)), contracts on Sepolia. Targets: ENSv2, World ID, 1inch Aqua.
 
