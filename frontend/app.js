@@ -149,11 +149,16 @@ if (typeof document !== "undefined") {
     $("vault-balances").textContent = balancesText(snap.state);
     $("c-note").hidden = !v.cNote;
     $("c-note").textContent = v.cNote;
-    $("withdraw").hidden = v.tone !== "pause";
-    $("revoke").hidden = v.tone === "pause"; // close-only offers verify and withdraw, as designed
+    // Visitors without the owner's token see Alice's vault read-only: her actions are hidden, verify stays.
+    const owner = Boolean(demoToken()) || ["localhost", "127.0.0.1"].includes(location.hostname);
+    $("viewer-note").hidden = owner;
+    for (const id of ["revoke", "restore", "withdraw", "deposit"]) if (!owner) $(id).hidden = true;
+    if (!owner) { document.body.dataset.viewer = "1"; }
+    $("withdraw").hidden = !owner || v.tone !== "pause";
+    $("revoke").hidden = !owner || v.tone === "pause"; // close-only offers verify and withdraw, as designed
     // Verifying renews the clock and tier; it cannot undo Alice's own revoke. Only she can restore it.
     $("verify-again").hidden = v.revoked;
-    $("restore").hidden = !v.revoked;
+    $("restore").hidden = !owner || !v.revoked;
     document.body.dataset.state = v.tone === "pause" ? "C" : v.tone === "trim" ? "B-trim" : "B";
   }
 

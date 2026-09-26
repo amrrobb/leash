@@ -128,7 +128,8 @@ One container (`Dockerfile`: Node 22, serves `/`, `/app` and the API) on the Con
 - Coolify project **Leash**, app `leash`, build pack `dockerfile`, port 8787, deploys `main` from GitHub. Redeploy: push to `main`, then `POST /api/v1/applications/<uuid>/start` or the Coolify UI.
 - Environment: `SEPOLIA_RPC`, `BACKEND_KEY`, `DEMO_OWNER_KEY` (= `OWNER_KEY`), `DEMO_TOKEN`, `WORLD_*` (production mode, legacy allowed, all four credentials), `DB_PATH=/data/leash.db`.
 - Owner and agent routes are loopback-only unless the caller sends `x-demo-token`. In the browser, open `https://leash.robbyn.xyz/app#demo=<DEMO_TOKEN>` once; the page stores it and sends it from then on. The agent and market scripts send it when `DEMO_TOKEN` is in their env (`BACKEND=https://leash.robbyn.xyz`).
-- The SQLite file lives in the container's `/data` volume; a fresh deploy keeps it.
+- The SQLite file lives in the container's `/data` volume; a fresh deploy keeps it. The first human to verify becomes the vault's human; everyone else is refused. `POST /api/demo/reset-human` (token) forgets that binding so the presenter can take over.
+- Visitors without the token see the dashboard read-only (owner actions hidden, a note explains whose vault it is); "Verify again" stays so a judge can experience the refusal.
 
 ## 9. Before submitting
 

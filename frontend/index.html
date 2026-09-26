@@ -90,6 +90,7 @@ a { color: var(--accent); }
 .qr img, .qr canvas { width: 212px; height: 212px; image-rendering: pixelated; }
 [hidden] { display: none !important; }
 .err { font-size: 13px; color: var(--trim-ink); margin-top: 10px; }
+.viewer { padding: 12px 16px; background: var(--pause-tint); color: var(--pause-ink); border-radius: 10px; font-size: 14px; line-height: 1.5; }
 @media (max-width: 1100px) { .row { flex-direction: column; } .auth { width: auto; } .page { padding: 20px 16px; } .big .mono { font-size: 60px; } }
 </style>
 </head>
@@ -140,6 +141,8 @@ a { color: var(--accent); }
       <button class="btn link" id="vm-cancel" data-testid="verify-cancel">Cancel</button>
     </div>
   </div>
+
+  <div class="viewer" id="viewer-note" data-testid="viewer-note" hidden>You're looking at Alice's vault. Owner actions are hers; scan the QR with your own World App to see what happens when someone who isn't Alice tries to renew her agent.</div>
 
   <!-- States B and C: one layout, different values -->
   <section id="dashboard" data-testid="dashboard" hidden>

@@ -14,8 +14,9 @@ test("reads the deployed Sepolia Vault in one block", { skip: !config.rpcUrl && 
   const chain = createChain(config);
   const s = await chain.readState();
   assert.equal(s.speed, 1440n);
-  assert.equal(s.alive, true, "agent holds MANDATE on leash.eth's registry");
-  assert.equal((s.agentRoles & ROLE.MANDATE) !== 0n, true);
+  // Live state: Alice may have revoked at any moment, so only check the derivation, not the value.
+  assert.equal(typeof s.alive, "boolean");
+  assert.equal(s.alive, (s.agentRoles & ROLE.MANDATE) !== 0n);
   assert.ok(s.blockNumber > 0n);
 });
 

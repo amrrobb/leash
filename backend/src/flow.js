@@ -44,7 +44,7 @@ export async function handleProof({ result, world, store, chain, vault, fetchImp
 
   const best = strongestCredential(result);
   if (!best) throw fail(400, "no supported credential in the proof");
-  if (!store.bindHuman(best.nullifier, vault, best.tier.name)) throw fail(409, "this human already backs another Vault");
+  if (!store.bindHuman(best.nullifier, vault, best.tier.name)) throw fail(409, "This vault already has its human. A verified person who isn't Alice can't renew her agent.");
 
   const grantTx = await chain.grantTier(best.tier.bit);
   const verifyTx = await chain.stampVerified();

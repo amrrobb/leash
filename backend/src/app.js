@@ -64,6 +64,7 @@ export function createApp(deps) {
     routes["POST /api/demo/revoke"] = async () => ({ tx: await demo.revokeMandate() });
     routes["POST /api/demo/grant-mandate"] = async () => ({ tx: await demo.grantMandate() });
     routes["POST /api/demo/withdraw"] = async () => ({ tx: await demo.withdrawAll() });
+    routes["POST /api/demo/reset-human"] = async () => ({ removed: store.unbindVault(vault) });
     routes["POST /api/demo/deposit"] = async (body) => {
       const usdc = BigInt(body?.usdc ?? 0), hype = BigInt(body?.hype ?? 0);
       const txs = await demo.deposit(usdc, hype);

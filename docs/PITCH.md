@@ -70,6 +70,9 @@ One currency for both directions. If the cap were in the swapped token, 2,000 wo
 **"Isn't 26.6k gas per swap expensive?"**
 It's ~20% on a 130k Aqua swap, one ENS read and one Vault read. It's the price of an on-chain permission read at execution time; a whitelist read costs about the same. We measured it against the real registry, not a mock.
 
+**"Can I try it myself? Do I have to be Alice?"**
+The live dashboard is Alice's vault, and you're welcome to watch it while the agent runs. If you scan the QR with your own World App you'll be refused: the vault already has its human, and a verified person who isn't Alice can't renew her agent. That refusal is the product working. To be Alice, run it locally: the repo ships a fork-based demo and a browser test that walks every state (`docs/SETUP.md`).
+
 ### The hard one
 
 **"The cap is per trade. Can't many small trades drain the position?"**

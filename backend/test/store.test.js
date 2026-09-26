@@ -37,3 +37,11 @@ test("a human can re-verify for the same vault but not back a second one", () =>
   assert.equal(s.bindHuman("0xabc", "0xvault1", "orb"), true);
   assert.equal(s.bindHuman("0xabc", "0xVault2", "selfie"), false);
 });
+
+test("a vault has one human: a second person is refused until the owner resets", () => {
+  const s = openStore(dbFile());
+  assert.equal(s.bindHuman("0xalice", "0xVault1", "selfie"), true);
+  assert.equal(s.bindHuman("0xjudge", "0xvault1", "orb"), false, "someone else cannot renew Alice's agent");
+  assert.equal(s.unbindVault("0xVAULT1"), 1);
+  assert.equal(s.bindHuman("0xjudge", "0xVault1", "orb"), true);
+});

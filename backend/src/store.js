@@ -13,6 +13,8 @@ export function openStore(path) {
   const insertNonce = db.prepare("INSERT INTO nonces (nonce, expires_at) VALUES (?, ?)");
   const useNonce = db.prepare("UPDATE nonces SET used_at = ? WHERE nonce = ? AND used_at IS NULL AND expires_at >= ?");
   const findHuman = db.prepare("SELECT vault FROM humans WHERE nullifier = ?");
+  const findVaultHuman = db.prepare("SELECT nullifier FROM humans WHERE vault = ? COLLATE NOCASE LIMIT 1");
+  const unbindVault = db.prepare("DELETE FROM humans WHERE vault = ? COLLATE NOCASE");
   const insertHuman = db.prepare("INSERT INTO humans (nullifier, vault, credential, first_seen) VALUES (?, ?, ?, ?)");
   const insertEvent = db.prepare("INSERT INTO agent_events (at, kind, title, detail) VALUES (?, ?, ?, ?)");
   const recentEvents = db.prepare("SELECT at, kind, title, detail FROM agent_events ORDER BY at DESC, id DESC LIMIT ?");
@@ -25,12 +27,18 @@ export function openStore(path) {
     consumeNonce(nonce, now = Math.floor(Date.now() / 1000)) {
       return useNonce.run(now, nonce, now).changes === 1;
     },
-    /** Binds a nullifier to a vault on first sight. False if it is already bound to another vault. */
+    /** One human per vault, one vault per human. The first proof binds them; after that only that
+     * human can renew this vault, and that human cannot back a second vault. */
     bindHuman(nullifier, vault, credential, now = Math.floor(Date.now() / 1000)) {
       const row = findHuman.get(nullifier);
       if (row) return row.vault.toLowerCase() === vault.toLowerCase();
+      if (findVaultHuman.get(vault)) return false; // this vault already has its human
       insertHuman.run(nullifier, vault, credential, now);
       return true;
+    },
+    /** Demo/owner escape hatch: forget who this vault's human is (e.g. the presenter takes over). */
+    unbindVault(vault) {
+      return unbindVault.run(vault).changes;
     },
     /** Off-chain agent events (a refused attempt leaves no on-chain trace). Shown in the feed. */
     addEvent(kind, title, detail, at = Math.floor(Date.now() / 1000)) {

@@ -92,6 +92,13 @@ test("the same human can re-verify: renewal works", async () => {
   assert.equal(calls.filter(([c]) => c === "verify").length, 2);
 });
 
+test("a second human cannot renew Alice's vault", async () => {
+  await handleProof({ result: freshResult("selfie", "0xalice"), world, store, chain, vault: VAULT, fetchImpl: okPortal });
+  calls = [];
+  await assert.rejects(handleProof({ result: freshResult("proof_of_human", "0xjudge"), world, store, chain, vault: VAULT, fetchImpl: okPortal }), (e) => e.status === 409 && /isn't Alice/.test(e.message));
+  assert.deepEqual(calls, []);
+});
+
 test("one human cannot back a second Vault", async () => {
   await handleProof({ result: freshResult("selfie", "0xalice"), world, store, chain, vault: VAULT, fetchImpl: okPortal });
   calls = [];
