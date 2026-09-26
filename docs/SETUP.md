@@ -45,7 +45,8 @@ The root `foundry.toml` mirrors swap-vm (0.8.30, via-IR, 700 runs) and sets `tes
 | `WORLD_APP_ID`, `WORLD_RP_ID`, `WORLD_RP_SIGNING_KEY` | backend | From the World Developer Portal (§5). Without them `/api/rp-context` returns 503 |
 | `WORLD_ACTION` | backend | Default `leash-verify` |
 | `WORLD_VERIFY_URL` | backend | Default `https://developer.worldcoin.org/api/v4/verify` (`/{rp_id}` is appended) |
-| `WORLD_ENVIRONMENT` | backend | Default `staging` |
+| `WORLD_ENVIRONMENT` | backend | Default `staging`; `production` for a real World App |
+| `WORLD_STAGING_TOKEN` | backend | From `set_world_id_staging_verification`; sent as `x-staging-verification-token` |
 | `DEMO_OWNER_KEY` | backend | Enables `/api/demo/*` (Alice's owner actions). Loopback-only unless `DEMO_TOKEN` is set and sent as `x-demo-token` |
 | `RPC_URL`, `DEPLOYMENTS`, `DB_PATH`, `PORT` | backend | Defaults: `SEPOLIA_RPC`, `deployments/sepolia.json`, `backend/leash-<vault>.db`, `8787` |
 
@@ -76,12 +77,16 @@ Cost on Sepolia at about 1 gwei: Vault 1.35M gas, router 5.0M gas, `.eth` name a
 
 ## 5. World ID
 
-1. At the Developer Portal, create an app in **staging** to get `app_id` (`app_staging_…`).
-2. Create the action **`leash-verify`**, with unlimited verifications per human (Alice must be able to come back).
-3. Register a **Relying Party**. That gives `rp_id` (`rp_…`) and a **signing key**; save the key immediately.
-4. Alice needs a **credential in World App**: Selfie Check (in-app, Beta), a passport with an NFC chip, or an Orb visit. Installing World App alone isn't enough.
-5. Staging apps may need World's **simulator** instead of the real World App. Confirm at the World booth which one works for v4 staging.
-6. On the first real proof, watch the backend log. A rejection prints `proof rejected (…)` with the result's shape (field names, protocol version, identifiers, nonce format). Check the identifiers against the tier map in `backend/src/world.js` and log them in NOTES.md.
+Configured through the World Developer Portal MCP (`claude mcp add worldcoin-developer-portal https://developer.world.org/api/mcp --transport http --header "Authorization: Bearer <team API key>"`):
+
+1. `get_team_context` → app `app_29bb7ef1643470c4e5535a8468422e24` ("Leash", production).
+2. `configure_world_id { app_id, generate_signing_key: true }` → `rp_id` `rp_069e54311421c6ec`. The signing key is returned **once**; it went straight into `.env` as `WORLD_RP_SIGNING_KEY`. Poll `get_world_id_registration_status` until production and staging are `registered`.
+3. `create_world_id_action { app_id, action: "leash-verify" }`.
+4. For staging proofs (World's simulator, no phone): `set_world_id_staging_verification { app_id, enabled: true }` opens a 24 h window and returns a token → `WORLD_STAGING_TOKEN`. The backend sends it as `x-staging-verification-token` on every verify call. Set `WORLD_ENVIRONMENT=staging`.
+5. For a real phone: `WORLD_ENVIRONMENT=production`, no staging token, and Alice needs a **credential in World App**: Selfie Check (in-app, Beta), an NFC passport, or an Orb visit. World App alone proves nothing.
+6. First real proof: a rejection logs `proof rejected (...)` with the result's shape. Record the identifiers in NOTES.md.
+
+Lost the signing key? `rotate_world_id_signing_key { app_id }` returns a new one once.
 
 ## 6. Run
 
