@@ -1,0 +1,7 @@
+{
+  "pollSeconds": 10,
+  "rerangeSeconds": 150,
+  "pairs": [
+    { "name": "HYPE", "other": "hype", "poolUsdc": "10000", "poolOther": "1000" }
+  ]
+}

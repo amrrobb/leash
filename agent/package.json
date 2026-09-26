@@ -1,0 +1,7 @@
+{
+  "name": "leash-agent",
+  "private": true,
+  "type": "module",
+  "scripts": { "agent": "node loop.mjs", "market": "node market.mjs" },
+  "dependencies": { "viem": "^2.0.0" }
+}
