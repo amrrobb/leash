@@ -59,6 +59,12 @@ export function createApp(deps) {
       if (!ADDR.test(owner ?? "")) throw bad("owner must be an address");
       return { owner, vault: await chain.vaultOf(owner) };
     },
+    /** ERC-8004 identity for an agent address: { registered, agentId?, name?, uri? }. */
+    "GET /api/agent": async (_b, q) => {
+      const address = q.get("address");
+      if (!ADDR.test(address ?? "")) throw bad("address must be an address");
+      return { address, ...(await chain.agentIdentity(address)) };
+    },
     "GET /api/state": async (_b, q) => chain.readState(await vaultParam(q)),
     "GET /api/feed": async (_b, q) => {
       const vault = await vaultParam(q);

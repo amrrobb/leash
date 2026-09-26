@@ -61,6 +61,14 @@ export default async function globalSetup() {
     env: { ...process.env, RPC: ANVIL, ALICE_KEY: keys.alice, AGENT: addr.agent, BACKEND: addr.backend, SPEED: "1440", OUT: `${tmp}/deployment.json`, SALT: String(Date.now()) },
   });
 
+  // The e2e agent registers itself in the real ERC-8004 Identity Registry (present on the fork), so the
+  // dashboard's badge is exercised on the registered path; the deployment file tells the backend where it is.
+  const IDENTITY_REGISTRY = "0x8004A818BFB912233c491871b3d84c89A494BD9e";
+  const registration = "data:application/json;base64," + Buffer.from(JSON.stringify({ type: "https://eips.ethereum.org/EIPS/eip-8004#registration-v1", name: "E2E agent" })).toString("base64");
+  execFileSync("cast", ["send", IDENTITY_REGISTRY, "register(string)", registration, "--private-key", keys.agent, "--rpc-url", ANVIL], { stdio: "ignore" });
+  const deployment = JSON.parse(readFileSync(`${tmp}/deployment.json`, "utf8"));
+  writeFileSync(`${tmp}/deployment.json`, JSON.stringify({ ...deployment, identityRegistry: IDENTITY_REGISTRY, identityRegistryBlock: 0 }, null, 2));
+
   // World Developer Portal stub: accepts every proof unless its nullifier is "0xportal-reject".
   const portal = createServer(async (req, res) => {
     let raw = "";

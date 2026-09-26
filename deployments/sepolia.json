@@ -22,5 +22,8 @@
   ],
   "factory": "0x0B037692580536e8010f2A1501313d54269052C2",
   "factoryBlock": 11784821,
-  "demoVault": "0x479576d6cC84c8Db48e31726B11c2DE0d00CC2B9"
+  "demoVault": "0x479576d6cC84c8Db48e31726B11c2DE0d00CC2B9",
+  "identityRegistry": "0x8004A818BFB912233c491871b3d84c89A494BD9e",
+  "identityRegistryBlock": 0,
+  "agentIdentityTx": "0xe6a75a33a4a41a59cc8b4406f6cca1f98ba16c65419d4592e3d90e2bfd660442"
 }

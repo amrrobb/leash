@@ -9,6 +9,7 @@ export const TIERS = {
 };
 const MANDATE = 1n << 40n;
 const ZERO = "0x0000000000000000000000000000000000000000";
+const ADDR = /^0x[0-9a-fA-F]{40}$/;
 const SEPOLIA = "0xaa36a7";
 
 /** Tier caps come from the Vault code via /api/deployment; these are only the fallback until it answers. */
@@ -146,6 +147,25 @@ if (typeof document !== "undefined") {
     if (!res.ok) throw Object.assign(new Error(data.error ?? `HTTP ${res.status}`), { status: res.status });
     return data;
   };
+  /** ERC-8004 badge for an agent address: registered agents show their id and name, others a plain note. Never blocks. */
+  const identityCache = new Map();
+  async function showIdentity(id, address) {
+    const el = $(id);
+    if (!ADDR.test(address ?? "")) { el.hidden = true; return; }
+    const key = address.toLowerCase();
+    if (!identityCache.has(key)) identityCache.set(key, api(`/api/agent?address=${address}`).catch(() => null));
+    const who = await identityCache.get(key);
+    if (!who || $(id) !== el) return;
+    el.className = `identity ${who.registered ? "tone-ok" : "tone-pause"}`;
+    el.replaceChildren();
+    if (who.registered) {
+      el.append(`ERC-8004 agent #${who.agentId}${who.name ? ` · ${who.name}` : ""}`);
+      const a = document.createElement("a");
+      a.href = `https://sepolia.etherscan.io/nft/${who.registry}/${who.agentId}`; a.target = "_blank"; a.rel = "noopener"; a.textContent = "registry";
+      el.append(" · ", a);
+    } else el.append("Not in the ERC-8004 registry · Leash bounds it anyway");
+    el.hidden = false;
+  }
   const txFor = (kind, params = {}) => api(`/api/tx?${new URLSearchParams({ kind, ...(session.vault && kind !== "createVault" ? { vault: session.vault } : {}), ...params })}`);
   const chainNow = () => (snap ? Number(snap.state.timestamp) + (Date.now() - snap.fetchedAt) / 1000 : 0);
   const isOwner = () => Boolean(snap && session.account && snap.state.owner?.toLowerCase() === session.account.toLowerCase());
@@ -207,6 +227,7 @@ if (typeof document !== "undefined") {
     $("vault-balances").textContent = balancesText(snap.state);
     $("agent-name").textContent = `${snap.state.agentLabel}.leash.eth`;
     $("agent-addr").textContent = short(snap.state.agent);
+    showIdentity("agent-identity", snap.state.agent);
     $("c-note").hidden = !v.cNote;
     $("c-note").textContent = v.cNote;
     // Owner actions only for the wallet that owns this vault; anyone else looks.
@@ -317,9 +338,10 @@ if (typeof document !== "undefined") {
   $("owner-name").addEventListener("click", () => { if (!session.account) connect(); });
 
   $("use-demo-agent").addEventListener("click", () => {
-    if (deployment.agent) $("agent-address").value = deployment.agent;
+    if (deployment.agent) { $("agent-address").value = deployment.agent; showIdentity("create-identity", deployment.agent); }
     else setErr("create-err", "No demo agent in this deployment.");
   });
+  $("agent-address").addEventListener("input", (e) => showIdentity("create-identity", e.target.value.trim()));
 
   $("create-vault").addEventListener("click", async (e) => {
     const button = e.currentTarget; // null after the first await: keep the reference

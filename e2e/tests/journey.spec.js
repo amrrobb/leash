@@ -62,6 +62,11 @@ test.describe.serial("Leash journey on a Sepolia fork: any wallet, its own vault
     await page.getByTestId("agent-label").fill("Alice-Agent");
     await page.getByTestId("use-demo-agent").click();
     await expect(page.getByTestId("agent-address")).toHaveValue(keys.addr.agent);
+    // The agent's ERC-8004 identity, read from the registry on the fork: informational, never a gate.
+    await expect(page.getByTestId("create-identity")).toContainText(/ERC-8004 agent #\d+ · E2E agent/);
+    await page.getByTestId("agent-address").fill("0x000000000000000000000000000000000000dEaD");
+    await expect(page.getByTestId("create-identity")).toContainText("Not in the ERC-8004 registry");
+    await page.getByTestId("use-demo-agent").click();
     await page.screenshot({ path: shot("1-create") });
     await page.getByTestId("create-vault").click();
     await expect(page.getByTestId("state-a")).toBeVisible({ timeout: 90_000 });
@@ -117,6 +122,7 @@ test.describe.serial("Leash journey on a Sepolia fork: any wallet, its own vault
     await expect(page.getByTestId("open-perm")).toHaveText("Allowed");
     await expect(page.getByTestId("close-perm")).toHaveText("Always");
     await expect(page.getByTestId("agent-name")).toHaveText("alice-agent.leash.eth");
+    await expect(page.getByTestId("agent-identity")).toContainText("E2E agent");
     await expect(page.getByTestId("vault-balances")).toHaveText("10,000 USDC · 1,000 HYPE");
     await expect(page.getByTestId("feed")).toContainText("You set the mandate");
     await expect(page.getByTestId("feed")).toContainText("You verified with World");

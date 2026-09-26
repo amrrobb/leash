@@ -1,6 +1,7 @@
 import { createPublicClient, createWalletClient, decodeFunctionData, encodeFunctionData, http, keccak256, toBytes, parseAbi } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { sepolia } from "viem/chains";
+import { agentIdentity } from "./identity.js";
 
 const MANDATE = 1n << 40n;
 
@@ -125,6 +126,11 @@ export function createChain({ rpcUrl, backendKey, deployments }) {
 
   return {
     publicClient,
+
+    /** The agent's ERC-8004 identity, if it registered one. Informational: Leash bounds unregistered agents the same way. */
+    agentIdentity(address) {
+      return agentIdentity({ publicClient, registry: deployments.identityRegistry, fromBlock: BigInt(deployments.identityRegistryBlock ?? 0) }, address);
+    },
 
     /** Protocol policy read from the Vault code (every factory vault shares it): tier caps and the clock. */
     async policy() {
