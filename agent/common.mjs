@@ -48,7 +48,8 @@ export function forgeAgent(action, env) {
     execFile(
       "forge",
       ["script", "script/Agent.s.sol", "--rpc-url", rpcUrl, "--broadcast"],
-      { cwd: root, env: { ...process.env, ACTION: action, DEPLOYMENT: deploymentPath, ...env }, maxBuffer: 8e6 },
+      // VAULT is passed explicitly: with OWNER= the vault was resolved in-process and the script must not fall back to the deployment's demo vault.
+      { cwd: root, env: { ...process.env, ACTION: action, DEPLOYMENT: deploymentPath, VAULT: deployment.vault, ...env }, maxBuffer: 8e6 },
       (err, stdout, stderr) => {
         const out = `${stdout}\n${stderr}`;
         const reason =
