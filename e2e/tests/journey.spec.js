@@ -42,7 +42,7 @@ test.describe.serial("Leash journey on a Sepolia fork", () => {
   test.beforeAll(async ({ browser }) => {
     page = await browser.newPage();
     await page.route("**/vendor/idkit.global.js", (route) => route.fulfill({ contentType: "text/javascript", body: fakeIDKit }));
-    await page.goto("/");
+    await page.goto("/app");
   });
 
   test("State A: no mandate yet, tiers are read-only", async () => {

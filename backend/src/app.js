@@ -1,4 +1,5 @@
 import { createServer } from "node:http";
+import { existsSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { extname, join, normalize } from "node:path";
 import { issueRpContext, handleProof, describeResult } from "./flow.js";
@@ -72,6 +73,9 @@ export function createApp(deps) {
       dir = deps.vendorDir;
       path = path.slice("/vendor".length);
     }
+    // "/" is the landing page when one exists, else the dashboard; "/app" is always the dashboard.
+    if (path === "/app") path = "/index.html";
+    if (path === "/" && existsSync(join(staticDir, "landing", "index.html"))) path = "/landing/index.html";
     const file = join(dir, path === "/" ? "index.html" : path);
     if (!file.startsWith(dir)) return json(res, 403, { error: "forbidden" });
     try {
