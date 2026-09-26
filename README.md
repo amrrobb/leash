@@ -58,7 +58,7 @@ The demo Vault runs at `SPEED=1440`: one 12-second Sepolia block is 4.8 hours of
 
 ## Sepolia
 
-`leash.eth` is registered to Alice and points at her UserRegistry. Addresses are in [deployments/sepolia.json](deployments/sepolia.json). The Vault deployed there predates `mandate()` and the router; the next deploy uses `script/deploy.sh`.
+`leash.eth` is registered to Alice and points at her UserRegistry. Vault v2 (`0x52e6…B164`) and MandateAquaRouter (`0xa091…b62f`) are live and reuse the same registry, Aqua and demo tokens. All addresses are in [deployments/sepolia.json](deployments/sepolia.json); `retiredVault` is the first Vault, which predates `mandate()`.
 
 ## Attribution
 

@@ -14,6 +14,6 @@ Ordered. One item at a time; each is ticked only when its tests pass and it is p
 - World app_id / rp_id / signing key (phase 3 runs on env placeholders until then)
 - More Sepolia ETH before any further real broadcast (deployer ~0.0058 ETH)
 - 1inch mentor answer: Vault as Aqua maker
-- Sepolia redeploy (needs ETH): the deployed Vault predates `mandate()` and has no router. Simulated against Alchemy: Vault ~1.35M gas + router 5.0M gas ≈ 0.0064 ETH at 0.96 gwei; Alice holds 0.0058. Agent, backend and taker keys also need gas for rehearsals (~0.002 ETH). Ask: 0.03 Sepolia ETH to Alice (covers gas spikes). Command: reuse USER_REGISTRY/AQUA/USDC/HYPE from deployments/sepolia.json with script/deploy.sh.
+- ~~Sepolia redeploy~~ done 2026-09-26: Vault v2 + router live, agent/backend/taker funded from Alice.
 - First real World proof: rejected proofs log their shape (`proof rejected ...`). Check the nonce format and credential identifiers against what the e2e fake assumes.
 - Timing on real Sepolia: decay starts at `verify()`, and A′ needs ~40–60 s of receipts plus a click, so B first shows ~1,000–1,300 of 2,000. Decide: accept, lower SPEED, or stamp at Create mandate.
