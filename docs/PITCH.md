@@ -29,7 +29,7 @@ Memorise the one-liners (from HANDOFF §9):
 | # | Slide | On the slide | Voice-over |
 |---|---|---|---|
 | 1 | **Leash** | Logo, tagline "Permission that shrinks on its own", landing screenshot | "Leash: permission for an AI agent that shrinks on its own unless a verified human keeps showing up." |
-| 2 | **The key problem** | Two columns: "Full access" (one bug = everything gone) · "Approve every action" (human is the bottleneck at 3 a.m.) | "Agents are starting to hold money. Every way to give them that today is broken in one of two directions." |
+| 2 | **The key problem** | Two columns: "Full access" (one bug = everything gone) · "Approve every action" (human is the bottleneck at 3 a.m.); below, four cards: Grok × Bankr (prompt injection, twice), DEXX ($30M, keys in bot custody), 3Commas ($22M, API keys), Banana Gun ($3M) | "Agents are starting to hold money. Every way to give them that today is broken in one of two directions. And it keeps happening: an AI agent on X was drained twice by a hidden prompt, because it held full authority over its wallet." |
 | 3 | **Why Aqua makes it sharp** | `dock()` → `ship()` loop diagram; "whoever runs the loop can pull the whole balance" | "On Aqua, strategies are immutable, so someone has to keep closing and reopening. That someone holds the key." |
 | 4 | **The idea** | The decay curve: 15,000 → 7,500 → 3,750 → 0 over 3 days; a QR icon resetting it | "Decay, not expiry. Expiry is a cliff; decay is a slope: big trades shrink first, the bot is never suddenly stranded. And only a human can reset it." |
 | 5 | **How it's built** | The architecture diagram from README; three sponsor logos on the edges they own | "ENS holds the permission. World makes renewal human-only. A SwapVM opcode enforces the cap inside every trade." |
@@ -73,6 +73,14 @@ It's ~20% on a 130k Aqua swap, one ENS read and one Vault read. It's the price o
 
 **"Can I try it myself? Do I have to be Alice?"**
 No. Connect your own wallet on Sepolia, create your own vault (one transaction: vault, `<name>.leash.eth` registered to you, your agent's mandate), verify with your own World App, deposit demo tokens and set a cap. Alice is just the persona in the story. If you scan the QR on *someone else's* vault you're refused: that vault already has its human.
+
+**"Has this actually happened?"**
+Yes, repeatedly, and always the same shape: software holding unbounded authority over a wallet.
+- **Grok × Bankr, May 2026** (and March 2025, same wallet): a prompt hidden in Morse code on X made the AI agent move ~$150–200k of tokens; the same wallet had lost ~$330k to the same injection path fourteen months earlier. The agent had full authority. With a leash: one fill bounded by the cap, then decay; no human, no renewal. Sources: [OECD.AI incident record](https://oecd.ai/en/incidents/2026-05-04-4a73), [Giskard](https://www.giskard.ai/knowledge/how-grok-got-prompt-injected-an-x-user-drained-150-000-from-an-ai-wallet).
+- **DEXX, November 2024**: ~$30M from 8,600+ wallets; the trading bot custodied and leaked users' private keys. Sources: [SlowMist via Brave New Coin](https://bravenewcoin.com/insights/dexx-hack-investigation-unveils-over-8600-solana-wallet-links-slowmist-report), [ChainCatcher](https://www.chaincatcher.com/en/article/2152340).
+- **3Commas, December 2022**: 100,000 exchange API keys leaked, ~$22M traded away; an API key is all-or-nothing. Sources: [Decrypt](https://decrypt.co/118094/after-repeated-denials-3commas-admits-it-was-source-for-earlier-hacks), [CoinDesk](https://www.coindesk.com/tech/2022/12/28/anonymous-twitter-user-leaks-alleged-3commas-api-database).
+- **Banana Gun, September 2024**: ~$3M from 11 traders through the Telegram bot's message oracle. Sources: [QuillAudits](https://www.quillaudits.com/blog/hack-analysis/banana-gun-exploit), [Cryptonews](https://cryptonews.com/news/telegram-bot-banana-gun-to-refund-3-million-hack-victims/).
+The one-liner: *every one of these bots held the key. Leash gives the bot a leash instead, and the money never leaves the owner's vault.*
 
 ### The hard one
 

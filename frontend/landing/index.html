@@ -160,6 +160,34 @@
           <p class="split__text">Then the agent isn’t autonomous, and the human is the bottleneck at 3 a.m.</p>
         </div>
       </div>
+      <p class="eyebrow cases__eyebrow">It keeps happening</p>
+      <div class="cases">
+        <article class="case">
+          <p class="case__when">May 2026 · and March 2025, same wallet</p>
+          <h3 class="case__title">Grok × Bankr: an AI agent’s wallet drained by a post on X</h3>
+          <p class="case__text">A prompt hidden in Morse code made the agent move about $150–200k of tokens; the same wallet had lost $330k to the same injection path fourteen months earlier. The agent held full authority over the wallet.</p>
+          <p class="case__leash">With a leash: one trade bounded by the cap, then decay. No human, no renewal.</p>
+        </article>
+        <article class="case">
+          <p class="case__when">November 2024</p>
+          <h3 class="case__title">DEXX: a trading bot that kept the keys</h3>
+          <p class="case__text">About $30M from more than 8,600 wallets. The bot custodied users’ private keys and leaked them; whoever had the key had everything.</p>
+          <p class="case__leash">With a leash: the bot never holds the key. It holds a role the owner can revoke, and the funds stay in the owner’s vault.</p>
+        </article>
+        <article class="case">
+          <p class="case__when">December 2022</p>
+          <h3 class="case__title">3Commas: 100,000 exchange API keys leaked</h3>
+          <p class="case__text">Around $22M traded away from users’ accounts. An API key is all-or-nothing: whoever has it trades as you, with no ceiling and no clock.</p>
+          <p class="case__leash">With a leash: the ceiling is on-chain, shrinks by itself, and only a verified human can raise it.</p>
+        </article>
+        <article class="case">
+          <p class="case__when">September 2024</p>
+          <h3 class="case__title">Banana Gun: outbound transfers nobody asked for</h3>
+          <p class="case__text">About $3M from 11 traders, drained while they used the bot. The bot’s authority over the wallet was unbounded, so one bug was enough.</p>
+          <p class="case__leash">With a leash: the market can take at most the cap per fill, and the agent can only ever close on its own.</p>
+        </article>
+      </div>
+      <p class="cases__note">Figures as reported by SlowMist, the teams involved and the trade press; links in <a href="https://github.com/amrrobb/leash/blob/main/docs/PITCH.md">docs/PITCH.md</a>.</p>
     </section>
 
     <!-- 02 · Why Aqua makes it sharp -->
