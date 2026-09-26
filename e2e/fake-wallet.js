@@ -2,7 +2,10 @@
 // page runs the exact code path it runs with MetaMask: eth_requestAccounts, eth_chainId, eth_sendTransaction,
 // eth_getTransactionReceipt.
 (() => {
+  // Like a real extension, the connected account survives a reload (the page restores it via eth_accounts).
   let account = null;
+  try { account = sessionStorage.getItem("fake-wallet.account"); } catch {}
+  const remember = (a) => { try { if (a) sessionStorage.setItem("fake-wallet.account", a); else sessionStorage.removeItem("fake-wallet.account"); } catch {} };
   const post = async (path, body) => {
     const r = await fetch(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body ?? {}) });
     const j = await r.json().catch(() => ({}));
@@ -15,11 +18,12 @@
     on(event, fn) { (listeners[event] ??= []).push(fn); },
     removeListener(event, fn) { listeners[event] = (listeners[event] ?? []).filter((f) => f !== fn); },
     /** Test hook: the user switches accounts inside the wallet. */
-    __switchAccount(next) { account = next; for (const fn of listeners.accountsChanged ?? []) fn(next ? [next] : []); },
+    __switchAccount(next) { account = next; remember(next); for (const fn of listeners.accountsChanged ?? []) fn(next ? [next] : []); },
     async request({ method, params }) {
       switch (method) {
         case "eth_requestAccounts":
           account = (await (await fetch("/api/demo/address")).json()).address;
+          remember(account);
           return [account];
         case "eth_accounts":
           return account ? [account] : [];
