@@ -2,69 +2,117 @@
 
 > Permission for an AI agent that shrinks on its own unless a verified human keeps showing up.
 
-ETHGlobal Tokyo 2026. Alice lets an agent run her 1inch Aqua position from her own Vault. The agent can **always close** positions, and can **open** them only while its ENSv2 mandate is alive. The market can trade against her position only up to a cap that Alice's World ID tier sets, and that cap **halves every 24 hours** until she verifies again. It reaches zero after 3 days. A custom SwapVM instruction enforces the cap inside every quote and swap.
+Built solo at **ETHGlobal Tokyo 2026** (From Scratch track). Live on Sepolia. Targets: ENSv2, World ID, 1inch Aqua.
 
-- Problem and use case: [docs/product.md](docs/product.md)
-- Architecture and verified facts: [HANDOFF.md](HANDOFF.md) · [ARCHITECTURE.md](ARCHITECTURE.md)
-- Setup and deploy: [docs/SETUP.md](docs/SETUP.md) · how the pieces connect: [docs/INTEGRATION.md](docs/INTEGRATION.md) · the agent: [docs/AGENT.md](docs/AGENT.md)
-- Integration log / sponsor feedback: [NOTES.md](NOTES.md)
+![Leash landing](docs/img/landing.png)
+
+## The problem
+
+On 1inch Aqua a strategy is immutable: to adjust a position you `dock()` it and `ship()` a new one. So whoever keeps a position in range must hold dock/ship authority, and **whoever can dock can take the whole balance**. Every way to hand that to a bot today is all-or-nothing: an operator approval, a session key, an API key. Expiry is a cliff that strands the bot mid-position. Per-action signing makes the human the bottleneck at 3 a.m.
+
+## What Leash does
+
+Alice gives her agent a **mandate** instead of a key:
+
+- **It lives in ENS.** The agent holds a role bit on `agent.leash.eth`, in Alice's own ENSv2 registry. She can revoke it; anyone can read it on-chain.
+- **It shrinks by itself.** A cap on how much the market can take from her position halves every 24 hours from the last time a human proved presence, and reaches zero after three days. Her World ID credential sets the ceiling (Selfie Check 2,000 · passport 7,500 · Orb 15,000 USDC).
+- **Only a human can renew it.** A World ID proof, verified server-side, stamps the clock and (re)grants the tier. The agent cannot renew itself, so the decay is real.
+- **It is enforced inside the trade.** `MandateGate` is a SwapVM instruction (opcode `0x2f`) that runs in every quote and swap: revoked → revert, empty → revert, otherwise trim the USDC leg to the live cap. Nothing sits in front of the router that a bot could bypass.
+- **The agent can always close.** `dock()` never reads the mandate. A frozen bot that cannot exit is worse than no bot.
+
+| Trimming | Close-only |
+|---|---|
+| ![dashboard trimming](docs/img/dashboard-trimming.png) | ![dashboard close-only](docs/img/dashboard-close-only.png) |
+
+## Demo, 90 seconds
+
+1. Alice verifies with World; the cap appears by tier. She sets the mandate.
+2. The agent opens a position on its own (`agent/loop.mjs`).
+3. The market trades; a 10,000 USDC ask fills for 7,500 as the cap decays (feed: "Asked 10,000 · allowed 7,500").
+4. The cap hits zero. The agent is refused, closes the position, waits.
+5. Alice verifies again; the agent resumes. Revoke and Restore do the same by hand.
+
+The demo Vault runs at `speed = 1440`: one Sepolia block = 4.8 hours, zero in ~3 minutes. Production is `speed = 1`.
 
 ## How it fits together
 
-| Piece | Where | What it does |
-|---|---|---|
-| `Vault` | `src/Vault.sol` | Holds Alice's tokens and is the Aqua maker. `ship()` needs the ENS mandate role and a live cap; `dock()` never reads ENS; `withdraw()` is owner-only; `verify()` is backend-only. One `roles()` read per call. |
-| `MandateGate` | `src/MandateGate.sol` | SwapVM opcode `0x2f`. Reads `Vault.mandate()`, reverts `MandateRevoked` / `MandateEmpty`, otherwise trims the USDC leg of the trade to the live cap (inverse x·y=k when USDC is the computed leg). |
-| `MandateAquaRouter` | `src/MandateAquaRouter.sol` | The stock Aqua SwapVM router plus `0x2f`. 22,493 B. |
-| ENSv2 | Alice's own `UserRegistry` | `agent.leash.eth` belongs to Alice; the agent holds the MANDATE role bit; the backend holds tier-admin at the registry root, so it can set tiers but never grant or revoke the mandate. |
-| World ID v4 | `backend/` | Signs `rp_context`, forwards the proof untouched to the Developer Portal, single-use nonces in SQLite, one human per Vault, then two transactions: grant the tier bit and stamp the Vault. |
-| Landing | `frontend/landing/` | Single-screen hero at `/`: video, liquid-glass card, slide-in menu, vanilla HTML/CSS/JS. "Open the dashboard" fades into `/app`. |
-| Dashboard | `frontend/` | One HTML page + one JS file, served by the backend at `/app`. Four states: A (no mandate), A′ (create mandate), B (operating / trimming), C (close-only). |
-| Agent + market | `agent/` | `loop.mjs` opens, re-ranges, gets refused at zero, closes and resumes on its own; `market.mjs` trades random sizes against it. Both are plain scripts with their own keys: Leash bounds them, it does not run them. |
+```
+Alice (one page) ── World ID ──► backend ──┬─ grantRoles(tier) ──► Alice's ENSv2 UserRegistry
+                                           └─ verify()          ──► Vault.lastVerified
+agent/loop.mjs ── ship / dock ──► Vault (Aqua maker, holds the tokens) ──► 1inch Aqua
+market (any taker) ── swap ──► MandateAquaRouter ── 0x2f MandateGate ──► Vault.mandate() ──► ENS roles
+```
 
-Numbers measured on a Sepolia fork against the real ENSv2 contracts: gate overhead **26.6k gas per swap**. `ship` costs 256k gas and `capNow` costs 33.4k.
+| Piece | Where | Ours? |
+|---|---|---|
+| `Vault` — Aqua maker; `ship` needs the role + a live cap, `dock` is always open, `withdraw` owner-only, `verify` backend-only | `src/Vault.sol` | yes |
+| `MandateGate` — SwapVM opcode `0x2f`; trims the USDC leg, inverse x·y=k when USDC is the computed leg; refuses pairs without USDC | `src/MandateGate.sol` | yes |
+| `MandateAquaRouter` — 1inch's Aqua router + `0x2f`; 22,509 B | `src/MandateAquaRouter.sol` | yes |
+| `LeashOrder` — the strategy program `MandateGate → XYCSwap → Salt` | `src/LeashOrder.sol` | yes |
+| Backend — World v4 verify, single-use nonces, one human per Vault, two transactions, chain reads pinned to one block, activity feed | `backend/` | yes |
+| Dashboard — four states, live decay, an ASCII leash that sags as authority decays | `frontend/` | yes |
+| Landing — liquid-glass hero at `/` | `frontend/landing/` | yes |
+| Agent + market — autonomous loop and a random taker | `agent/` | yes |
+| SwapVM engine, `XYCSwap`, Aqua, ENSv2 registries, IDKit | `lib/`, npm | 1inch / ENS / World |
+
+### Why each sponsor is load-bearing
+
+- **ENSv2.** The permission is a role bit on a name Alice owns in her own `UserRegistry`. Token admin bits cannot be delegated in ENSv2, so the backend holds tier-admin at the registry **root**: it can set tiers but never touch MANDATE. Expiry of the name kills all roles automatically.
+- **World ID.** Without it the agent renews its own permission and decay is theatre. Replay protection is the signed `rp_context` nonce (single-use), not the nullifier, because the same human must be able to come back; the nullifier binds one human to one Vault.
+- **1inch Aqua / SwapVM.** The Aqua router ships with no permission instruction at all. `MandateGate` is one, and it answers *how much* rather than yes/no. Gate cost measured against the real ENSv2 registry: **26.6k gas per swap**.
+
+## Sepolia
+
+| | Address |
+|---|---|
+| `leash.eth` → Alice's UserRegistry | `0x00C79cAd7282dad808620CeeEca662EA1a3609bd` |
+| Vault (v3) | `0x479576d6cC84c8Db48e31726B11c2DE0d00CC2B9` |
+| MandateAquaRouter | `0xa091409BA5C9c6Cae2Db2e924f6b460b44Dfb62f` |
+| Aqua (self-deployed) | `0x7E13F754772777D098E4f8B22f82Dcdf3Ea55cC2` |
+| Demo USDC / HYPE | `0xa44B…683F` / `0xa284…9375` |
+
+Full list in [deployments/sepolia.json](deployments/sepolia.json). World: app `app_29bb7ef1643470c4e5535a8468422e24`, RP `rp_069e54311421c6ec`, action `leash-verify`.
 
 ## Run it
 
 ```bash
 git clone --recurse-submodules https://github.com/amrrobb/leash.git && cd leash
 (cd lib/swap-vm && yarn install --frozen-lockfile --production --ignore-scripts)
-(cd backend && npm ci) && (cd e2e && npm ci && npx playwright install chromium)
-echo 'SEPOLIA_RPC=<archive-capable Sepolia RPC>' > .env
+(cd backend && npm ci) && (cd agent && npm ci) && (cd e2e && npm ci && npx playwright install chromium)
+cp .env.example .env                                   # fill it in; docs/SETUP.md explains every variable
+cd backend && DEMO_OWNER_KEY=$OWNER_KEY npm start      # http://localhost:8787  (dashboard at /app)
+cd agent && AGENT_KEY=$AGENT_KEY node loop.mjs         # the agent
+cd agent && TAKER_KEY=$TAKER_KEY node market.mjs       # the market
 ```
 
-| Tests | Command | Covers |
+| Tests | Command | Count |
 |---|---|---|
-| Contracts | `forge test --no-match-path "test/fork/*"` | Vault, decay fuzzing, gate on every leg in both token orders, real Aqua |
-| Contracts on a fork | `forge test --match-path "test/fork/*"` | Real ENSv2 UserRegistry and registrar on Sepolia |
-| Backend + view model | `cd backend && npm test` | Replay, portal rejection, tiers, HTTP API, feed, state logic |
-| End to end | `npx --prefix e2e playwright test --config e2e/playwright.config.js` | Anvil fork, fresh deploy, real backend, browser: A → cancel → decline → A′ → B → trimmed trade → decay → C → agent still closes → recovery → portal reject → revoke → withdraw |
+| Contracts | `forge test --no-match-path "test/fork/*"` | 71 |
+| Contracts on a Sepolia fork (real ENSv2) | `forge test --match-path "test/fork/*"` | 22 |
+| Backend + dashboard logic | `cd backend && npm test` | 50 |
+| End to end in a browser on an Anvil fork | `npx --prefix e2e playwright test --config e2e/playwright.config.js` | 14 |
 
-The e2e suite stubs World at exactly two edges: the IDKit browser script (a fake that answers as World App would) and the Developer Portal HTTP call. Everything else is real: contracts, transactions, backend and browser.
+Every guard in the contracts and backend was checked by breaking it and watching a test fail. The e2e suite stubs World at exactly two edges (the IDKit script and the portal HTTP call); everything else is real.
 
-### Local demo on a fork
+## Docs
 
-```bash
-anvil --fork-url $SEPOLIA_RPC --chain-id 11155111 --port 8545 &
-RPC=http://127.0.0.1:8545 ALICE_KEY=0x.. AGENT=0x.. BACKEND=0x.. OUT=e2e/.tmp/demo.json script/deploy.sh
-cd backend && RPC_URL=http://127.0.0.1:8545 DEPLOYMENTS=../e2e/.tmp/demo.json BACKEND_KEY=0x.. DEMO_OWNER_KEY=<alice key> \
-  WORLD_APP_ID=app_staging_.. WORLD_RP_ID=rp_.. WORLD_RP_SIGNING_KEY=0x.. npm start      # http://localhost:8787
-# the agent and the market
-DEPLOYMENT=e2e/.tmp/demo.json SALT=1 ACTION=ship  AGENT_KEY=0x.. forge script script/Agent.s.sol --rpc-url http://127.0.0.1:8545 --broadcast
-DEPLOYMENT=e2e/.tmp/demo.json SALT=1 ACTION=trade TAKER_KEY=0x.. AMOUNT=10000000000 forge script script/Agent.s.sol --rpc-url http://127.0.0.1:8545 --broadcast
-DEPLOYMENT=e2e/.tmp/demo.json SALT=1 ACTION=dock  AGENT_KEY=0x.. forge script script/Agent.s.sol --rpc-url http://127.0.0.1:8545 --broadcast
-```
+- [docs/product.md](docs/product.md) — problem, use case, why
+- [docs/AGENT.md](docs/AGENT.md) — the agent: who decides what, the loop, why the problem is real
+- [docs/INTEGRATION.md](docs/INTEGRATION.md) — the seams between ENS, World and Aqua, and every change from the pre-event plan
+- [docs/SETUP.md](docs/SETUP.md) — environment, deploy, World portal, run, test
+- [docs/UI-SPEC.md](docs/UI-SPEC.md) — every screen, copy, data and hooks
+- [NOTES.md](NOTES.md) — the integration log: every friction with dates, for the sponsor debriefs
+- [ROADMAP.md](ROADMAP.md) — what was built in what order
 
-The demo Vault runs at `SPEED=1440`: one 12-second Sepolia block is 4.8 hours of decay, and the cap reaches zero in about 3 minutes.
+## Known limits
 
-`DEMO_OWNER_KEY` enables `/api/demo/*`, which signs Alice's owner actions (set cap, revoke, withdraw) so the demo can run without a wallet popup. In production, Alice signs these herself.
-
-## Sepolia
-
-`leash.eth` is registered to Alice and points at her UserRegistry. Vault v2 (`0x52e6…B164`) and MandateAquaRouter (`0xa091…b62f`) are live and reuse the same registry, Aqua and demo tokens. All addresses are in [deployments/sepolia.json](deployments/sepolia.json); `retiredVault` is the first Vault, which predates `mandate()`.
+- One curve. The gate's inverse math is for x·y=k; concentrated or pegged curves would need their own.
+- Demo tokens. HYPE/USDC on Sepolia are mintable placeholders.
+- Selfie Check is Beta and not a uniqueness guarantee; Leash uses it as a presence check with the lowest tier.
+- World's simulator completes only Proof-of-Human requests; phones without native World ID 4.0 use legacy proofs (`WORLD_ALLOW_LEGACY=1`).
 
 ## Attribution
 
 - Powered by SwapVM — © Degensoft Ltd 2025
 - Built on 1inch Aqua, ENSv2 (`ensdomains/contracts-v2`) and World ID (IDKit v4).
-- AI tools: Claude Code wrote code under the builder's direction. Prompts and specs are in `HANDOFF.md`, `CLAUDE.md`, `ROADMAP.md` and `docs/`.
+- AI tools: Claude Code wrote code under the builder's direction. The prompts and specs it worked from are in `HANDOFF.md`, `CLAUDE.md`, `ROADMAP.md` and `docs/`.
