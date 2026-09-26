@@ -14,6 +14,7 @@ export function issueRpContext({ world, store, sign = signRequest }) {
     action: world.action,
     environment: world.environment,
     credentials: world.credentials ?? ["proof_of_human", "passport", "mnc", "selfie"],
+    allow_legacy_proofs: Boolean(world.allowLegacy),
     rp_context: { rp_id: world.rpId, nonce: sig.nonce, created_at: sig.createdAt, expires_at: sig.expiresAt, signature: sig.sig },
   };
 }
@@ -34,7 +35,8 @@ export function describeResult(result) {
 /** Verifies a completion result and, only if every check passes, grants the tier and stamps the Vault. */
 export async function handleProof({ result, world, store, chain, vault, fetchImpl = fetch }) {
   requireWorld(world);
-  if (result?.protocol_version !== "4.0") throw fail(400, "expected a World ID 4.0 uniqueness proof");
+  const legacy = result?.protocol_version === "3.0";
+  if (result?.protocol_version !== "4.0" && !(legacy && world.allowLegacy)) throw fail(400, "expected a World ID 4.0 uniqueness proof");
   if (result.action !== world.action) throw fail(400, `proof is for action "${result.action}", expected "${world.action}"`);
   if (!store.consumeNonce(result.nonce)) throw fail(409, "rp_context nonce is unknown, expired or already used");
 
@@ -46,5 +48,5 @@ export async function handleProof({ result, world, store, chain, vault, fetchImp
 
   const grantTx = await chain.grantTier(best.tier.bit);
   const verifyTx = await chain.stampVerified();
-  return { tier: best.tier.name, cap: best.tier.cap, credential: best.identifier, txs: { grantTier: grantTx, verify: verifyTx } };
+  return { tier: best.tier.name, cap: best.tier.cap, credential: best.identifier, protocol: result.protocol_version, txs: { grantTier: grantTx, verify: verifyTx } };
 }

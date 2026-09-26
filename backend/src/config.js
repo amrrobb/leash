@@ -24,6 +24,9 @@ export function loadConfig(env = process.env) {
       // Staging proofs (World simulator) verify only inside a window opened on the portal, and every
       // verify call must carry its token. Unset for production proofs from a real World App.
       stagingToken: env.WORLD_STAGING_TOKEN,
+      // Phones whose World App cannot yet produce native 4.0 proofs answer `world_id_4_not_available`.
+      // With this on, IDKit may fall back to a World ID 3.0 proof, which the portal still verifies.
+      allowLegacy: env.WORLD_ALLOW_LEGACY === "1" || env.WORLD_ALLOW_LEGACY === "true",
       // Which credentials the page asks World App for. World's simulator completes only a single
       // proof_of_human request, so staging runs set WORLD_CREDENTIALS=proof_of_human.
       credentials: (env.WORLD_CREDENTIALS ?? "proof_of_human,passport,mnc,selfie").split(",").map((c) => c.trim()).filter(Boolean),

@@ -108,6 +108,17 @@ test("wrong action and legacy proofs are rejected", async () => {
   assert.deepEqual(calls, []);
 });
 
+test("legacy 3.0 proofs: rejected by default, accepted when WORLD_ALLOW_LEGACY is on", async () => {
+  const legacy = { ...freshResult("selfie", "0xl1"), protocol_version: "3.0" };
+  await assert.rejects(handleProof({ result: legacy, world, store, chain, vault: VAULT, fetchImpl: okPortal }), /4.0/);
+  assert.deepEqual(calls, []);
+  const out = await handleProof({ result: { ...freshResult("selfie", "0xl2"), protocol_version: "3.0" }, world: { ...world, allowLegacy: true }, store, chain, vault: VAULT, fetchImpl: okPortal });
+  assert.equal(out.protocol, "3.0");
+  assert.deepEqual(calls, [["grantTier", ROLE.SELFIE], ["verify"]]);
+  assert.equal(issueRpContext({ world: { ...world, allowLegacy: true }, store }).allow_legacy_proofs, true);
+  assert.equal(issueRpContext({ world, store }).allow_legacy_proofs, false);
+});
+
 test("unsupported credential sends no transaction", async () => {
   await assert.rejects(handleProof({ result: freshResult("unknown_cred"), world, store, chain, vault: VAULT, fetchImpl: okPortal }), /no supported credential/);
   assert.deepEqual(calls, []);

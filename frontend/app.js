@@ -303,7 +303,7 @@ if (typeof document !== "undefined") {
         app_id: ctx.app_id,
         action: ctx.action,
         rp_context: ctx.rp_context,
-        allow_legacy_proofs: false,
+        allow_legacy_proofs: ctx.allow_legacy_proofs === true,
         environment: ctx.environment,
       }).constraints(constraintsFor(IDKit, ctx.credentials));
       if (mine !== attempt) return;
