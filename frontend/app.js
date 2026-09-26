@@ -395,7 +395,18 @@ if (typeof document !== "undefined") {
     provider.on("chainChanged", () => location.reload());
   }
   listen(wallet.provider);
-  $("owner-name").addEventListener("click", () => { if (!session.account) connect(); });
+  // Header pill: connect when nobody is, otherwise switch wallet (forget the remembered one and choose again).
+  $("owner-name").addEventListener("click", () => (session.account ? switchWallet() : connect()));
+  async function switchWallet() {
+    try { localStorage.removeItem("leash.wallet"); localStorage.removeItem("leash.account"); } catch {}
+    $("wm-current").textContent = `Connected with ${wallet.name} as ${short(session.account)}. Pick another wallet or account.`;
+    $("wm-current").hidden = false;
+    chosen = null;
+    session.account = null;
+    if (discovered.size <= 1) { render(); return connect(); } // one wallet: its own account picker is the switch
+    await connect();
+    $("wm-current").hidden = true;
+  }
 
   $("use-demo-agent").addEventListener("click", () => {
     if (deployment.agent) { $("agent-address").value = deployment.agent; showIdentity("create-identity", deployment.agent); }

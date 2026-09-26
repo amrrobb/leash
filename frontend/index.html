@@ -106,7 +106,7 @@ a { color: var(--accent); }
       <img src="/brand/leash-logo-512-transparent.png" alt="" width="26" height="26" style="display:block">
       <span>Leash</span>
     </div>
-    <div class="who"><span>Sepolia</span><a class="pill-name" id="vault-link" data-testid="vault-link" href="#" hidden></a><button class="pill-name" id="owner-name" data-testid="owner-name" style="cursor:pointer">Connect wallet</button></div>
+    <div class="who"><span>Sepolia</span><a class="pill-name" id="vault-link" data-testid="vault-link" href="#" hidden></a><button class="pill-name" id="owner-name" data-testid="owner-name" style="cursor:pointer" title="Switch wallet">Connect wallet</button></div>
   </header>
 
 
@@ -173,6 +173,7 @@ a { color: var(--accent); }
     <div class="card modal" role="dialog" aria-labelledby="wm-title" style="align-items:stretch;text-align:left;gap:10px">
       <span class="eyebrow">Connect</span>
       <h2 id="wm-title" style="margin:0 0 6px;font-size:24px">Choose a wallet</h2>
+      <p class="quiet" id="wm-current" style="margin:0 0 4px" hidden></p>
       <div id="wallet-choice" data-testid="wallet-choice" style="display:flex;flex-direction:column;gap:8px"></div>
       <p class="quiet" style="margin:6px 0 0">Any wallet on Sepolia works. Your wallet signs; Leash never holds your keys.</p>
       <button class="btn link" id="wm-cancel" data-testid="wallet-cancel" style="align-self:center">Cancel</button>

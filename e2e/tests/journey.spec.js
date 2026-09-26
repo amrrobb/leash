@@ -269,6 +269,17 @@ test.describe.serial("Leash journey on a Sepolia fork: any wallet, its own vault
     await page.evaluate((next) => window.ethereum.__switchAccount(next), keys.addr.alice);
     await expect(page.getByTestId("viewer-note")).toBeHidden();
     await expect(page.getByTestId("revoke")).toBeVisible();
+    // The header pill switches wallets: the remembered choice is forgotten and the chooser opens again.
+    await page.evaluate(() => {
+      const info = { uuid: "0f1e2d3c-0000-4000-8000-000000000003", name: "Third wallet", icon: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg'/>", rdns: "xyz.leash.third" };
+      window.dispatchEvent(new CustomEvent("eip6963:announceProvider", { detail: Object.freeze({ info, provider: { request: async () => { throw new Error("wrong wallet"); } } }) }));
+    });
+    await page.getByTestId("owner-name").click();
+    await expect(page.getByTestId("wallet-modal")).toBeVisible();
+    expect(await page.evaluate(() => localStorage.getItem("leash.wallet"))).toBeNull();
+    await page.getByTestId("wallet-xyz.leash.fake").click();
+    await expect(page.getByTestId("wallet-modal")).toBeHidden();
+    await expect(page.getByTestId("revoke")).toBeVisible();
   });
 
   test("A visitor without a wallet sees the vault read-only", async ({ browser }) => {
