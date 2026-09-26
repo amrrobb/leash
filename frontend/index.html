@@ -35,6 +35,8 @@ a { color: var(--accent); }
 .track { margin-top: 22px; height: 10px; background: var(--track); border-radius: 999px; overflow: hidden; }
 .track div { height: 10px; transition: width .6s ease; }
 .sub { display: flex; justify-content: space-between; margin-top: 8px; font-size: 13px; color: var(--muted); }
+.wave { margin: 18px 0 0; font: 500 13px/1.15 'IBM Plex Mono', ui-monospace, monospace; letter-spacing: .02em; white-space: pre; color: var(--accent); overflow: hidden; }
+.wave[data-tone="trim"] { color: var(--trim-bar); } .wave[data-tone="pause"] { color: var(--pause-bar); }
 .facts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin-top: 26px; padding-top: 22px; border-top: 1px solid var(--rule); }
 .facts .k { font-size: 13px; color: var(--muted); }
 .facts .v { font-size: 17px; font-weight: 500; margin-top: 6px; }
@@ -149,6 +151,7 @@ a { color: var(--accent); }
         <div class="big"><span class="mono" id="auth" data-testid="authority">0</span><span class="unit">USDC</span></div>
         <div class="track"><div id="bar"></div></div>
         <div class="sub"><span id="status-text"></span><span>of <span id="cap-text"></span> granted</span></div>
+        <pre class="wave" id="leash-wave" data-testid="leash-wave"></pre>
         <div class="facts">
           <div><div class="k">Last verified</div><div class="v" id="last"></div><div class="n">via <span id="tier-name"></span></div></div>
           <div><div class="k">Halves every</div><div class="v">24 hours</div><div class="n">unless you return</div></div>
@@ -183,6 +186,7 @@ a { color: var(--accent); }
   </section>
 </main>
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js" defer></script>
+<script src="/leash-wave.js"></script>
 <script src="/app.js" type="module"></script>
 </body>
 </html>

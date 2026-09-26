@@ -106,8 +106,14 @@ if (typeof document !== "undefined") {
     }
   }
 
+  const wave = window.LeashWave && $("leash-wave") ? window.LeashWave.mount($("leash-wave"), { ratio: 1 }) : null;
+
   function renderDashboard() {
     const v = dashboardView(snap.state, chainNow());
+    if (wave) {
+      wave.setRatio(v.barPct / 100);
+      wave.setTone(v.tone);
+    }
     $("auth").textContent = v.authText;
     $("cap-text").textContent = v.capText;
     $("bar").style.width = `${v.barPct.toFixed(2)}%`;
