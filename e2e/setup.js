@@ -95,6 +95,7 @@ export default async function globalSetup() {
       WORLD_RP_ID: "rp_e2e",
       WORLD_RP_SIGNING_KEY: generatePrivateKey(),
       WORLD_VERIFY_URL: `http://127.0.0.1:${PORTAL_PORT}/verify`,
+      WORLD_ALLOW_LEGACY: "1", // the hosted app allows World ID 3.0 proofs; the journey covers that path
     },
   });
   await waitFor(async () => (await fetch(`${BACKEND}/api/health`)).ok, "backend");
