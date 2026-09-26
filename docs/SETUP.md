@@ -95,7 +95,7 @@ Lost the signing key? `rotate_world_id_signing_key { app_id }` returns a new one
 ```bash
 cd backend && DEMO_OWNER_KEY=$ALICE_KEY npm start        # http://localhost:8787, serves frontend/
 ```
-Agent and market (`SALT` picks the strategy; reuse it for trade and dock):
+Agent and market (`SALT` names the position; reuse it for trade and dock). Any pair works as long as one leg is USDC: `OTHER=<token>` picks the other token (default: the demo HYPE), `POOL_USDC` / `POOL_OTHER` set the pool sizes. Demo tokens mint themselves; a real token must already be in the Vault.
 ```bash
 DEPLOYMENT=deployments/sepolia.json SALT=1 ACTION=ship  AGENT_KEY=$AGENT_KEY forge script script/Agent.s.sol --rpc-url $SEPOLIA_RPC --broadcast
 DEPLOYMENT=deployments/sepolia.json SALT=1 ACTION=trade TAKER_KEY=$TAKER_KEY AMOUNT=10000000000 forge script script/Agent.s.sol --rpc-url $SEPOLIA_RPC --broadcast

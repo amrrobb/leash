@@ -24,7 +24,9 @@ export const routerAbi = parseAbi([
 ]);
 
 /** Turns raw Vault/router logs into feed entries, newest first. Pure, so it is unit-tested. */
-export function toFeed(logs, { usdc, blockTimes, asks = new Map() }) {
+const erc20Abi = parseAbi(["function symbol() view returns (string)"]);
+
+export function toFeed(logs, { usdc, blockTimes, asks = new Map(), symbols = new Map() }) {
   const usd = (v) => Number(v) / 1e6;
   const out = [];
   for (const log of logs) {
@@ -50,12 +52,14 @@ export function toFeed(logs, { usdc, blockTimes, asks = new Map() }) {
       case "Swapped": {
         const usdcIn = a.tokenIn.toLowerCase() === usdc.toLowerCase();
         const usdcLeg = usdcIn ? a.amountIn : a.amountOut;
+        const other = (usdcIn ? a.tokenOut : a.tokenIn).toLowerCase();
+        const pair = `${symbols.get(other) ?? other.slice(0, 6)}/USDC`;
         const ask = usdcIn ? asks.get(log.transactionHash) : undefined;
         const n = (v) => Math.round(usd(v)).toLocaleString("en-US");
         if (ask !== undefined && ask > usdcLeg) {
-          out.push({ ...base, kind: "trim", title: "Market trade on HYPE/USDC", detail: `Asked ${n(ask)} · allowed ${n(usdcLeg)} USDC` });
+          out.push({ ...base, kind: "trim", title: `Market trade on ${pair}`, detail: `Asked ${n(ask)} · allowed ${n(usdcLeg)} USDC` });
         } else {
-          out.push({ ...base, kind: "full", title: "Market trade on HYPE/USDC", detail: `${n(usdcLeg)} USDC filled in full` });
+          out.push({ ...base, kind: "full", title: `Market trade on ${pair}`, detail: `${n(usdcLeg)} USDC filled in full` });
         }
         break;
       }
@@ -140,7 +144,10 @@ export function createChain({ rpcUrl, backendKey, deployments }) {
           }
         }),
       );
-      return toFeed(logs, { usdc: deployments.usdc, blockTimes, asks }).slice(0, limit);
+      const symbols = new Map();
+      const others = [...new Set(mine.flatMap((l) => [l.args.tokenIn, l.args.tokenOut]).map((t) => t.toLowerCase()))].filter((t) => t !== deployments.usdc.toLowerCase());
+      await Promise.all(others.map(async (t) => symbols.set(t, await publicClient.readContract({ address: t, abi: erc20Abi, functionName: "symbol" }).catch(() => undefined))));
+      return toFeed(logs, { usdc: deployments.usdc, blockTimes, asks, symbols }).slice(0, limit);
     },
     grantTier(bit) {
       return send({ address: registry, abi: registryAbi, functionName: "grantRoles", args: [id, bit, deployments.agent] });

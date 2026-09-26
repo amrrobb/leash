@@ -4,6 +4,7 @@ import { toFeed } from "../src/chain.js";
 
 const USDC = "0xa44B82a82383c4251a9BFed2532c78e56B97683F";
 const HYPE = "0xa2840E991C00e6A99d2A94f44491139F19109375";
+const SYMS = new Map([[HYPE.toLowerCase(), "HYPE"]]);
 const log = (eventName, blockNumber, args = {}, logIndex = 0) => ({ eventName, blockNumber, args, logIndex, transactionHash: "0x" + blockNumber });
 
 test("feed is newest first and labels each event", () => {
@@ -17,7 +18,8 @@ test("feed is newest first and labels each event", () => {
 test("a swap reports its USDC leg whichever side it is on", () => {
   const usdcIn = log("Swapped", 5n, { tokenIn: USDC, tokenOut: HYPE, amountIn: 2_000_000_000n, amountOut: 1n });
   const usdcOut = log("Swapped", 6n, { tokenIn: HYPE, tokenOut: USDC, amountIn: 1n, amountOut: 1_500_000_000n });
-  const feed = toFeed([usdcIn, usdcOut], { usdc: USDC, blockTimes: new Map() });
+  const feed = toFeed([usdcIn, usdcOut], { usdc: USDC, blockTimes: new Map(), symbols: SYMS });
+  assert.equal(feed[0].title, "Market trade on HYPE/USDC");
   assert.equal(feed[0].detail, "1,500 USDC filled in full");
   assert.equal(feed[1].detail, "2,000 USDC filled in full");
 });
@@ -34,6 +36,11 @@ test("an untrimmed trade is filled in full", () => {
   const feed = toFeed([swap], { usdc: USDC, blockTimes: new Map(), asks: new Map([["0x9", 500_000_000n]]) });
   assert.equal(feed[0].kind, "full");
   assert.equal(feed[0].detail, "500 USDC filled in full");
+});
+
+test("an unknown token shows its address prefix as the pair name", () => {
+  const swap = log("Swapped", 3n, { tokenIn: USDC, tokenOut: "0xABCDEF0000000000000000000000000000000001", amountIn: 1_000_000n, amountOut: 1n });
+  assert.equal(toFeed([swap], { usdc: USDC, blockTimes: new Map() })[0].title, "Market trade on 0xabcd/USDC");
 });
 
 test("same-block events keep log order", () => {

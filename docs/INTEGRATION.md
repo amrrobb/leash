@@ -87,6 +87,7 @@ Then, in State A′, Alice sets `ownerCap` (`setCap`): that is the "Create manda
 - `ship`: Vault checks `msg.sender == agent`, reads `roles(labelId, agent)` once, requires MANDATE and a cap above zero, approves Aqua, then calls `aqua.ship(router, abi.encode(order), tokens, amounts)`. The Aqua strategy hash equals SwapVM's `hash(order)` only with this encoding [`GateBase._ship`].
 - `dock`: agent or owner, and never reads ENS. Closing works after revoke, decay or expiry [`test_dock_worksAfterRevokeAndDecay`, e2e "agent can still close"].
 - Every re-ship needs a new `SALT`, because a docked strategy hash can never be shipped again.
+- A strategy is a pair, two amounts and a program. The program is the same for every pair (`LeashOrder`: `MandateGate → XYCSwap → Salt`); the pair is anything the Vault holds **with a USDC leg**. `Vault.ship` rejects a token list without the cap token (`CapTokenMissing`), and the gate independently reverts `MandateTokenMissing` on any strategy that reaches it without one, so no position the Vault backs can escape the cap. Other curves (concentrated, pegged) would need their own inverse in the gate: see the trimming note above.
 
 ## 5. Taker → router → gate → Vault → ENS (every quote and swap) — `src/MandateGate.sol`
 
