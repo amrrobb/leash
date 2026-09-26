@@ -52,7 +52,7 @@ market (any taker) ── swap ──► MandateAquaRouter ── 0x2f MandateGa
 | `LeashOrder` — the strategy program `MandateGate → XYCSwap → Salt` | `src/LeashOrder.sol` | yes |
 | Backend — World v4 verify, single-use nonces, one human per Vault, two transactions, chain reads pinned to one block, activity feed | `backend/` | yes |
 | Dashboard — four states, live decay, an ASCII leash that sags as authority decays | `frontend/` | yes |
-| Landing — liquid-glass hero at `/` | `frontend/landing/` | yes |
+| Landing — the Leash mark built from 2,219 beads that tightens every 6 s, live cap badge, story sections at `/` (the earlier glass hero stays at `/a`) | `frontend/landing-b/` | yes |
 | ERC-8004 badge — the agent's identity from the Sepolia Identity Registry (`0x8004A818…BD9e`), shown when you pick an agent and on the mandate card; informational, never a gate | `backend/src/identity.js` | yes |
 | Agent + market + attack — autonomous loop, a random taker, and a prompt-injected agent that tries six ways to get the money and is refused six times | `agent/` | yes |
 | SwapVM engine, `XYCSwap`, Aqua, ENSv2 registries, IDKit | `lib/`, npm | 1inch / ENS / World |
