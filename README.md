@@ -26,7 +26,7 @@ Alice gives her agent a **mandate** instead of a key:
 
 ## Demo, 90 seconds
 
-1. Alice verifies with World; the cap appears by tier. She sets the mandate.
+1. Alice verifies with World; the cap appears by tier. She deposits into her vault and sets the mandate.
 2. The agent opens a position on its own (`agent/loop.mjs`).
 3. The market trades; a 10,000 USDC ask fills for 7,500 as the cap decays (feed: "Asked 10,000 · allowed 7,500").
 4. The cap hits zero. The agent is refused, closes the position, waits.

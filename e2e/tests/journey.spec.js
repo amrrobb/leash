@@ -82,6 +82,10 @@ test.describe.serial("Leash journey on a Sepolia fork", () => {
     await page.getByTestId("create-mandate").click();
     await expect(page.getByText(/can only go down/).last()).toBeVisible();
     await page.getByTestId("starting-authority").fill("2000");
+    // Alice funds her own vault before the agent gets anything to run.
+    await expect(page.getByTestId("a2-balances")).toHaveText("0 USDC · 0 HYPE");
+    await page.getByTestId("a2-deposit").click();
+    await expect(page.getByTestId("a2-balances")).toHaveText("10,000 USDC · 1,000 HYPE");
   });
 
   test("Create mandate -> State B operating at 2,000 USDC", async ({ request }) => {
@@ -92,6 +96,7 @@ test.describe.serial("Leash journey on a Sepolia fork", () => {
     await expect(page.getByTestId("open-perm")).toHaveText("Allowed");
     await expect(page.getByTestId("close-perm")).toHaveText("Always");
     await expect(page.getByTestId("feed")).toContainText("You set the mandate");
+    await expect(page.getByTestId("vault-balances")).toHaveText("10,000 USDC · 1,000 HYPE");
     await expect(page.getByTestId("feed")).toContainText("You verified with World");
     const s = await state(request);
     expect(s.ownerCap).toBe("2000000000");
@@ -174,6 +179,13 @@ test.describe.serial("Leash journey on a Sepolia fork", () => {
   test("Withdraw: the owner takes the funds home", async () => {
     await page.getByTestId("withdraw").click();
     await expect(page.getByTestId("feed")).toContainText("You withdrew");
+    await expect(page.getByTestId("vault-balances")).toHaveText(/^0 USDC · [\d,]+ HYPE$/);
+  });
+
+  test("Deposit: Alice's money goes back into her vault and the feed says so", async () => {
+    await page.getByTestId("deposit").click();
+    await expect(page.getByTestId("feed")).toContainText("You deposited");
+    await expect(page.getByTestId("vault-balances")).toHaveText(/^10,000 USDC · [\d,]+ HYPE$/);
   });
 
   test("Restore: only Alice can bring a revoked mandate back", async ({ request }) => {

@@ -64,6 +64,13 @@ export function createApp(deps) {
     routes["POST /api/demo/revoke"] = async () => ({ tx: await demo.revokeMandate() });
     routes["POST /api/demo/grant-mandate"] = async () => ({ tx: await demo.grantMandate() });
     routes["POST /api/demo/withdraw"] = async () => ({ tx: await demo.withdrawAll() });
+    routes["POST /api/demo/deposit"] = async (body) => {
+      const usdc = BigInt(body?.usdc ?? 0), hype = BigInt(body?.hype ?? 0);
+      const txs = await demo.deposit(usdc, hype);
+      const parts = [usdc > 0n && `${(Number(usdc) / 1e6).toLocaleString("en-US")} USDC`, hype > 0n && `${(Number(hype) / 1e18).toLocaleString("en-US")} HYPE`].filter(Boolean);
+      store.addEvent("owner", "You deposited", `${parts.join(" · ")} into your vault`);
+      return { txs };
+    };
   }
 
   async function serveStatic(req, res) {

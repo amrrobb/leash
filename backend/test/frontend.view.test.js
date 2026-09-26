@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { limitAt, tierOf, screenOf, dashboardView, constraintsFor, TIERS } from "../../frontend/app.js";
+import { limitAt, tierOf, screenOf, dashboardView, constraintsFor, balancesText, TIERS } from "../../frontend/app.js";
 
 const H = 3600;
 const MANDATE = 1n << 40n;
@@ -76,5 +76,10 @@ test("constraints: one credential is a bare request, several are any()", () => {
   assert.deepEqual(constraintsFor(IDKit, ["proof_of_human"]), { t: "proof_of_human" });
   assert.deepEqual(constraintsFor(IDKit, ["proof_of_human", "selfie"]), { any: [{ t: "proof_of_human" }, { t: "selfie" }] });
   assert.equal(constraintsFor(IDKit, []).any.length, 4);
+});
+
+test("vault balances read as whole tokens", () => {
+  assert.equal(balancesText({ vaultUsdc: "10000000000", vaultHype: "1000000000000000000000" }), "10,000 USDC · 1,000 HYPE");
+  assert.equal(balancesText({}), "0 USDC · 0 HYPE");
 });
 

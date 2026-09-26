@@ -22,6 +22,7 @@ const demo = {
   setCap: async (cap) => (demoCalls.push(["setCap", cap]), "0xc"),
   revokeMandate: async () => (demoCalls.push(["revoke"]), "0xr"),
   grantMandate: async () => (demoCalls.push(["grant"]), "0xm"),
+  deposit: async (u, h) => (demoCalls.push(["deposit", u, h]), ["0xd"]),
 };
 
 let server, base, bare, bareBase;
@@ -68,7 +69,11 @@ test("demo owner routes call the owner signer", async () => {
   await post(`${base}/api/demo/set-cap`, { cap: "500000000" });
   await post(`${base}/api/demo/revoke`);
   await post(`${base}/api/demo/grant-mandate`);
-  assert.deepEqual(demoCalls, [["setCap", 500_000_000n], ["revoke"], ["grant"]]);
+  await post(`${base}/api/demo/deposit`, { usdc: "10000000000", hype: "1000000000000000000000" });
+  assert.deepEqual(demoCalls, [["setCap", 500_000_000n], ["revoke"], ["grant"], ["deposit", 10_000_000_000n, 1_000_000_000_000_000_000_000n]]);
+  const feed = await (await fetch(`${base}/api/feed`)).json();
+  assert.equal(feed[0].title, "You deposited");
+  assert.equal(feed[0].detail, "10,000 USDC · 1,000 HYPE into your vault");
 });
 
 test("demo routes do not exist without a demo signer", async () => {
@@ -107,7 +112,7 @@ test("agent events merge into the feed newest first and are validated", async ()
   const feed = await (await fetch(`${base}/api/feed`)).json();
   assert.equal(feed[0].kind, "blocked");
   assert.equal(feed[0].offchain, true);
-  assert.equal(feed[1].title, "Agent opened a range");
+  assert.ok(feed.some((e) => e.title === "Agent opened a range"), "chain events are merged in");
 });
 
 test("mergeFeed orders by time then block then log index", () => {

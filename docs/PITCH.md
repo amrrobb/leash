@@ -9,6 +9,7 @@ Have open: the dashboard in State B with the agent loop and the market bot runni
 | Beat | Say | Show |
 |---|---|---|
 | Hook (10 s) | "On 1inch Aqua you can't edit a position. You close it and open a new one. So whoever runs that loop for you holds the key to your whole balance. That's what you hand a bot today: all or nothing." | Dashboard, big number |
+| Whose money (5 s) | "Her funds sit in her own vault; here's the balance. The bot never holds them." | Mandate card: "In your vault: 10,000 USDC · 1,000 HYPE" |
 | Idea (15 s) | "Leash gives the bot a permission that shrinks by itself. This number is how much the market can take from Alice's position right now. It halves every day since she last proved she's a human, with World ID. Nobody but a human can top it up." | Point at the number and the ASCII leash sagging |
 | Proof it's real (20 s) | "This isn't a UI rule. It's a SwapVM opcode: it runs inside every quote and swap. Watch: the market just asked for 10,000 and got 7,500." | Feed row "Asked 10,000 · allowed 7,500 · Trimmed" |
 | The asymmetry (15 s) | "When it hits zero the bot can't open anything, but it can always close. That's the design: the failure state is resting, not stuck." | Wait for or show State C; terminal: "refused: MandateEmpty… closing… waiting for the human" |

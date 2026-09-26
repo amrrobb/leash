@@ -18,6 +18,8 @@ export const vaultAbi = parseAbi([
   "event Withdrawn(address indexed token, uint256 amount)",
 ]);
 
+const balanceAbi = parseAbi(["function balanceOf(address) view returns (uint256)"]);
+
 export const routerAbi = parseAbi([
   "function swap((address maker, uint256 traits, bytes data) order, uint256 amount, bytes takerTraitsAndData) payable returns (uint256, uint256, bytes32)",
   "event Swapped(bytes32 orderHash, address maker, address taker, address tokenIn, address tokenOut, uint256 amountIn, uint256 amountOut)",
@@ -106,16 +108,18 @@ export function createChain({ rpcUrl, backendKey, deployments }) {
       const at = { blockNumber: block.number };
       const read = (functionName, address = vault, abi = vaultAbi, args = []) =>
         publicClient.readContract({ address, abi, functionName, args, ...at });
-      const [cap, baseCap, ownerCap, lastVerified, speed, agentRoles] = await Promise.all([
+      const [cap, baseCap, ownerCap, lastVerified, speed, agentRoles, vaultUsdc, vaultHype] = await Promise.all([
         read("capNow"),
         read("baseCap"),
         read("ownerCap"),
         read("lastVerified"),
         read("speed"),
         read("roles", registry, registryAbi, [id, deployments.agent]),
+        read("balanceOf", deployments.usdc, balanceAbi, [vault]),
+        deployments.hype ? read("balanceOf", deployments.hype, balanceAbi, [vault]) : 0n,
       ]);
       const alive = (agentRoles & MANDATE) !== 0n;
-      return { blockNumber: block.number, timestamp: block.timestamp, alive, cap, baseCap, ownerCap, lastVerified, speed, agentRoles };
+      return { blockNumber: block.number, timestamp: block.timestamp, alive, cap, baseCap, ownerCap, lastVerified, speed, agentRoles, vaultUsdc, vaultHype };
     },
     /** Recent Vault (and router, if deployed) events as feed entries. */
     async readFeed(limit = 8) {

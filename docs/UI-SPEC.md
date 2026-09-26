@@ -104,7 +104,7 @@ Two cards side by side (760 px + flexible), then a full-width activity card belo
 | Fact 2 | Halves every — **24 hours** — unless you return | static |
 | Fact 3 | Reaches zero — **in ~2d 0h / Reached** — if nobody verifies | `data-testid="reaches-zero"` |
 | C-only note (14 px, grey ink) | "Nobody verified for 3 days. Authority reached zero." or "You revoked the mandate." | `data-testid="c-note"` |
-| Buttons | **Verify again** (primary; hidden when revoked) · **Revoke mandate** (ghost; hidden in C) · **Restore mandate** (primary; only when revoked) · **Withdraw to wallet** (ghost; only in C) | `verify-again`, `revoke`, `restore`, `withdraw` |
+| Buttons | **Verify again** (primary; hidden when revoked) · **Revoke mandate** (ghost; hidden in C) · **Restore mandate** (primary; only when revoked) · **Withdraw to wallet** (ghost; only in C) · **Deposit** (ghost) | `verify-again`, `revoke`, `restore`, `withdraw`, `deposit` |
 | Clock note (right, muted 13 px) | Demo clock: 1 second = 0.4 hours | `id="clock"` |
 | Error line | e.g. "Could not read the chain: …" | `data-testid="dash-error"` |
 
@@ -143,12 +143,13 @@ Row kinds and their pills:
 | blocked | Agent tried to open a new range | Authority is empty · waiting for you | Paused (grey) |
 | closed | Agent closed the position | Docked · funds never left your vault | Closed (grey) |
 
-### 6d. Deposit (planned, not built yet)
+### 6d. Deposit (built)
 
-Alice's funds enter the Vault by a plain token transfer to the Vault address. To make that visible:
-- Mandate card gets a line **In your vault: 10,000 USDC · 1,000 HYPE** (live balances), hook `data-testid="vault-balances"`.
-- State A′ gets a step **Deposit** before "Create mandate" (amounts per token, one transaction each), or a **Deposit** ghost button on the dashboard. In the demo the owner signer performs it; in production Alice's wallet does.
-- Feed row kind `owner`: "You deposited" · "10,000 USDC into your vault".
+Alice's funds enter the Vault by a token transfer to its address; in the demo the owner signer mints the demo tokens there.
+- Mandate card row **In your vault** — *Only you can withdraw* — right (mono): **10,000 USDC · 1,000 HYPE**, live. Hook `data-testid="vault-balances"`.
+- State A′ field **In your vault** with the same figure (`data-testid="a2-balances"`) and a **Deposit** button (`data-testid="a2-deposit"`): Alice funds the Vault before the agent gets anything to run.
+- Dashboard action **Deposit** (ghost, `data-testid="deposit"`), always visible.
+- Feed row kind `owner`: "You deposited" · "10,000 USDC · 1,000 HYPE into your vault".
 
 ## 7. Transitions
 

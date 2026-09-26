@@ -74,6 +74,12 @@ export function constraintsFor(IDKit, credentials) {
   return reqs.length === 1 ? reqs[0] : IDKit.any(...reqs);
 }
 
+/** "10,000 USDC · 1,000 HYPE" from raw balances. */
+export function balancesText(s) {
+  const usdc = Number(BigInt(s.vaultUsdc ?? 0)) / 1e6, hype = Number(BigInt(s.vaultHype ?? 0)) / 1e18;
+  return `${usdc.toLocaleString("en-US", { maximumFractionDigits: 0 })} USDC · ${hype.toLocaleString("en-US", { maximumFractionDigits: 0 })} HYPE`;
+}
+
 export const TAGS = {
   you: ["Verified", "ok"],
   owner: ["Owner", "ok"],
@@ -140,6 +146,7 @@ if (typeof document !== "undefined") {
     $("open-text").style.color = v.tone === "pause" ? "var(--pause-ink)" : "var(--accent)";
     $("fill-text").textContent = v.fillText;
     $("clock").textContent = v.clockText;
+    $("vault-balances").textContent = balancesText(snap.state);
     $("c-note").hidden = !v.cNote;
     $("c-note").textContent = v.cNote;
     $("withdraw").hidden = v.tone !== "pause";
@@ -235,6 +242,7 @@ if (typeof document !== "undefined") {
     $("a2-verified").textContent = `Verified · ${t.name}`;
     $("a2-headline").textContent = `Authority up to ${fmt(t.cap)} USDC`;
     $("a2-max").textContent = `max ${fmt(t.cap)} · can only go down`;
+    if (snap) $("a2-balances").textContent = balancesText(snap.state);
     const input = $("a2-cap");
     input.max = String(t.cap);
     if (!input.value) input.value = String(t.cap);
@@ -354,6 +362,20 @@ if (typeof document !== "undefined") {
   $("revoke").addEventListener("click", (e) => ownerAction(e.currentTarget, "/api/demo/revoke"));
   $("withdraw").addEventListener("click", (e) => ownerAction(e.currentTarget, "/api/demo/withdraw"));
   $("restore").addEventListener("click", (e) => ownerAction(e.currentTarget, "/api/demo/grant-mandate"));
+  const DEPOSIT = { usdc: String(10_000n * 1_000_000n), hype: String(1_000n * 10n ** 18n) };
+  $("deposit").addEventListener("click", (e) => ownerAction(e.currentTarget, "/api/demo/deposit", DEPOSIT));
+  $("a2-deposit").addEventListener("click", async (e) => {
+    e.currentTarget.disabled = true;
+    try {
+      await api("/api/demo/deposit", DEPOSIT);
+      await poll();
+    } catch (err) {
+      $("a2-err").hidden = false;
+      $("a2-err").textContent = err.message;
+    } finally {
+      e.currentTarget.disabled = false;
+    }
+  });
 
   window.leash = { session, api, poll, render, ownerAction, startVerify, $, get snap() { return snap; } };
   poll();

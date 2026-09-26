@@ -119,6 +119,7 @@ a { color: var(--accent); }
     <h1 id="a2-headline" style="font-size:28px">Authority up to 0 USDC</h1>
     <div class="field"><label>Agent name</label><div class="box"><span class="mono" style="font-size:16px">agent</span><span class="quiet">→ agent.leash.eth</span></div></div>
     <div class="field"><label>Pair</label><div class="box">HYPE / USDC</div></div>
+    <div class="field"><label>In your vault</label><div class="box"><span class="mono" id="a2-balances" data-testid="a2-balances" style="font-size:16px"></span><button class="btn ghost" id="a2-deposit" data-testid="a2-deposit" style="margin-left:auto;height:36px;padding:0 14px;font-size:14px">Deposit</button></div></div>
     <div class="field"><label for="a2-cap">Starting authority</label>
       <div class="box"><input id="a2-cap" data-testid="starting-authority" type="number" min="1" step="1"><span class="quiet">USDC</span><span class="quiet" id="a2-max" style="margin-left:auto"></span></div></div>
     <p style="font-size:14px">Halves every 24 hours unless you return · Reaches zero in ~3 days</p>
@@ -163,6 +164,7 @@ a { color: var(--accent); }
           <button class="btn" id="restore" data-testid="restore" hidden>Restore mandate</button>
           <button class="btn ghost" id="revoke" data-testid="revoke">Revoke mandate</button>
           <button class="btn ghost" id="withdraw" data-testid="withdraw" hidden>Withdraw to wallet</button>
+          <button class="btn ghost" id="deposit" data-testid="deposit">Deposit</button>
           <span class="clock" id="clock"></span>
         </div>
         <div class="err" id="dash-err" data-testid="dash-error" hidden></div>
@@ -171,6 +173,7 @@ a { color: var(--accent); }
         <span class="eyebrow">Mandate</span>
         <div class="name" id="agent-name" data-testid="agent-name">agent.leash.eth</div>
         <div class="desc">Runs Alice's HYPE/USDC position on 1inch Aqua</div>
+        <div class="perm" style="margin-top:18px"><div><div class="t">In your vault</div><div class="d">Only you can withdraw</div></div><span class="val mono" id="vault-balances" data-testid="vault-balances"></span></div>
         <div class="perms">
           <div class="perm"><div><div class="t">Close positions</div><div class="d">Never decays</div></div><span class="val" style="color:var(--accent)" data-testid="close-perm">Always</span></div>
           <div class="perm"><div><div class="t">Open new ranges</div><div class="d">Needs live authority</div></div><span class="val" id="open-text" data-testid="open-perm"></span></div>
