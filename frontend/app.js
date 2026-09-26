@@ -584,7 +584,7 @@ if (typeof document !== "undefined") {
         const request = preset ? await builder.preset(IDKit[preset]()) : await builder.constraints(constraintsFor(IDKit, ctx.credentials));
         if (mine !== attempt) return;
         drawQR(request.connectorURI);
-        completion = await request.pollUntilCompletion({ pollInterval: 2000, timeout: 180_000 });
+        completion = await request.pollUntilCompletion({ pollInterval: 2000, timeout: 420_000 });
         if (mine !== attempt) return; // cancelled while waiting: ignore the result, send nothing
         if (!completion.success && completion.error === "world_id_4_not_available" && !preset && ctx.allow_legacy_proofs === true) {
           preset = await pickLegacyPreset();
