@@ -60,7 +60,8 @@ test.describe.serial("Leash journey on a Sepolia fork: any wallet, its own vault
 
   test("Create your vault: one transaction makes the vault, the ENS name and the agent's mandate", async ({ request }) => {
     await page.getByTestId("agent-label").fill("Alice-Agent");
-    await page.getByTestId("agent-address").fill(keys.addr.agent);
+    await page.getByTestId("use-demo-agent").click();
+    await expect(page.getByTestId("agent-address")).toHaveValue(keys.addr.agent);
     await page.screenshot({ path: shot("1-create") });
     await page.getByTestId("create-vault").click();
     await expect(page.getByTestId("state-a")).toBeVisible({ timeout: 90_000 });

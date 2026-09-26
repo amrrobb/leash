@@ -119,7 +119,8 @@ a { color: var(--accent); }
     <h1>Create your vault</h1>
     <p>One transaction: your vault, your agent's name under leash.eth, and the agent's mandate. You keep the admin bits, so only you can revoke it.</p>
     <div class="field"><label for="agent-label">Agent name</label><div class="box"><input id="agent-label" data-testid="agent-label" type="text" placeholder="alice-agent" style="font: 500 16px 'IBM Plex Mono', monospace; width: 220px"><span class="quiet">.leash.eth</span></div></div>
-    <div class="field"><label for="agent-address">Agent address</label><div class="box"><input id="agent-address" data-testid="agent-address" type="text" placeholder="0x…" style="font: 500 14px 'IBM Plex Mono', monospace; width: 100%"></div></div>
+    <div class="field"><label for="agent-address">Agent’s wallet address <span class="quiet">— the bot that will run your position, not you</span></label><div class="box"><input id="agent-address" data-testid="agent-address" type="text" placeholder="0x…" style="font: 500 14px 'IBM Plex Mono', monospace; width: 100%"><button class="btn ghost" id="use-demo-agent" data-testid="use-demo-agent" type="button" style="margin-left:auto;height:36px;padding:0 14px;font-size:14px;white-space:nowrap">Use the Leash demo agent</button></div>
+      <p class="quiet" style="margin:0">Any agent works: it needs only two calls on your vault, <span class="mono">ship</span> and <span class="mono">dock</span>. The demo agent is the one running in the terminal.</p></div>
     <button class="btn" id="create-vault" data-testid="create-vault" style="align-self:flex-start">Create your vault</button>
     <div class="err" id="create-err" data-testid="create-error" hidden></div>
   </section>

@@ -314,6 +314,11 @@ if (typeof document !== "undefined") {
   $("connect-wallet").addEventListener("click", connect);
   $("owner-name").addEventListener("click", () => { if (!session.account) connect(); });
 
+  $("use-demo-agent").addEventListener("click", () => {
+    if (deployment.agent) $("agent-address").value = deployment.agent;
+    else setErr("create-err", "No demo agent in this deployment.");
+  });
+
   $("create-vault").addEventListener("click", async (e) => {
     const label = $("agent-label").value.trim().toLowerCase();
     const agent = $("agent-address").value.trim();
