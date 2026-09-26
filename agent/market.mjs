@@ -1,13 +1,14 @@
 // "The market": an ordinary taker that trades against whatever position the agent has open.
 // Sizes are random so the feed shows both full fills and trims. It is refused when the mandate is empty.
 import { existsSync, readFileSync } from "node:fs";
-import { forgeAgent, log, root, sleep } from "./common.mjs";
+import { forgeAgent, log, resolveVault, root, sleep } from "./common.mjs";
 
 const statePath = process.env.STATE ?? `${root}agent/.state.json`;
 const every = Number(process.env.MARKET_SECONDS ?? 40);
 const [lo, hi] = (process.env.MARKET_RANGE ?? "1500,12000").split(",").map(Number);
 if (!process.env.TAKER_KEY) throw new Error("TAKER_KEY is required");
 
+await resolveVault(); // same OWNER= / VAULT= rules as the agent: trade against that vault's position, not the demo vault
 log("market", `trading every ~${every}s, ${lo}–${hi} USDC`);
 for (;;) {
   await sleep((every * (0.6 + Math.random() * 0.8)) * 1000);

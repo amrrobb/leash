@@ -6,7 +6,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { parseAbi } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
-import { deployment, forgeAgent, log, mandate, publicClient, report, root, usd } from "./common.mjs";
+import { deployment, forgeAgent, log, mandate, publicClient, report, resolveVault, root, usd } from "./common.mjs";
 
 if (!process.env.AGENT_KEY) throw new Error("AGENT_KEY is required");
 const agent = privateKeyToAccount(process.env.AGENT_KEY);
@@ -24,7 +24,7 @@ const registryAbi = parseAbi([
   "error EACCannotGrantRoles(uint256 resource, uint256 roleBitmap, address account)",
 ]);
 const erc20 = parseAbi(["function balanceOf(address) view returns (uint256)"]);
-const vault = deployment.vault;
+const vault = await resolveVault(); // VAULT= or OWNER=, like the agent and the market
 
 const reason = (e) => e?.cause?.data?.errorName ?? e?.cause?.reason ?? e?.shortMessage?.split("\n")[0] ?? String(e);
 
