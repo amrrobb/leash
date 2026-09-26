@@ -89,3 +89,11 @@ test("demo routes: loopback or token only", () => {
   assert.equal(demoAllowed(req("203.0.113.9", { "x-demo-token": "" }), ""), false);
 });
 
+test("errors carry the RPC's detail text when viem has one", async () => {
+  const chainErr = { readState: async () => { throw Object.assign(new Error("x"), { shortMessage: "Missing or invalid parameters.", details: "in-flight transaction limit reached for delegated accounts" }); } };
+  const srv = createApp({ config, store: openStore(join(dir, "e.db")), chain: chainErr, staticDir }).listen(0);
+  const body = await (await fetch(`http://127.0.0.1:${srv.address().port}/api/state`)).json();
+  srv.close();
+  assert.equal(body.error, "Missing or invalid parameters. (in-flight transaction limit reached for delegated accounts)");
+});
+

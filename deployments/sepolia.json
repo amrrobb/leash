@@ -3,7 +3,7 @@
   "deployedAt": "2026-09-26",
   "ensName": "leash.eth",
   "agentName": "agent.leash.eth",
-  "alice": "0x311159a207D9C9c9AE83C4F83ED18De346bfa4BA",
+  "alice": "0x7EbC0A2Bc28bCe4B447FF526F897aC6CCDc334Ef",
   "agent": "0xFf2C23254af3FB788A9Ed558f0147ec6246e19d3",
   "backend": "0xDc10f712B2e304b1933bC590573da12e7234C9bD",
   "userRegistry": "0x00C79cAd7282dad808620CeeEca662EA1a3609bd",
@@ -12,8 +12,12 @@
   "usdc": "0xa44B82a82383c4251a9BFed2532c78e56B97683F",
   "hype": "0xa2840E991C00e6A99d2A94f44491139F19109375",
   "router": "0xa091409BA5C9c6Cae2Db2e924f6b460b44Dfb62f",
-  "vault": "0x52e6e4C8944A84D9637360dAD679bc9B7448B164",
-  "deployBlock": 11782942,
+  "vault": "0x479576d6cC84c8Db48e31726B11c2DE0d00CC2B9",
+  "deployBlock": 11783241,
   "speed": 1440,
-  "retiredVault": "0x333735bE6692069c9D30f25B5b4d74419Fb787d5"
+  "registryOwner": "0x311159a207D9C9c9AE83C4F83ED18De346bfa4BA",
+  "retiredVaults": [
+    "0x333735bE6692069c9D30f25B5b4d74419Fb787d5",
+    "0x52e6e4C8944A84D9637360dAD679bc9B7448B164"
+  ]
 }

@@ -38,7 +38,8 @@ The root `foundry.toml` mirrors swap-vm (0.8.30, via-IR, 700 runs) and sets `tes
 | Variable | Used by | Notes |
 |---|---|---|
 | `SEPOLIA_RPC` | forge, backend, e2e | Must serve historical state (Alchemy, Tenderly). publicnode can't fork |
-| `ALICE_KEY` | deploy scripts | Owner of the Vault and of `leash.eth` |
+| `ALICE_KEY` | deploy scripts | Owns `leash.eth` and Alice's registry (7702-delegated; one in-flight tx at a time) |
+| `OWNER_KEY`, `OWNER` | deploy, backend `DEMO_OWNER_KEY` | Vault owner: a plain key with root mandate/tier admin on the registry. Never reuse a delegated or busy key here |
 | `AGENT`, `AGENT_KEY` | deploy, Agent.s.sol | Holds MANDATE on `agent.leash.eth` |
 | `BACKEND`, `BACKEND_KEY` | deploy, backend | Tier-admin at registry root; the only address that can `verify()` |
 | `TAKER_KEY` | Agent.s.sol `trade` | Plays "the market" in the demo |

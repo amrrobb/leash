@@ -86,7 +86,9 @@ export function createApp(deps) {
       const status = err.status ?? 500;
       if (status >= 500) console.error(key, err);
       else if (key === "POST /api/proof") console.warn(`proof rejected (${status}): ${err.message}`, JSON.stringify(describeResult(body)));
-      json(res, status, { error: err.shortMessage ?? err.message });
+      // viem hides the RPC's reason in `details` ("in-flight transaction limit reached for delegated accounts").
+      const detail = err.details && err.details !== err.shortMessage ? ` (${err.details})` : "";
+      json(res, status, { error: (err.shortMessage ?? err.message) + detail });
     }
   });
 }
