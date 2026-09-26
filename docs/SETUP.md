@@ -98,7 +98,7 @@ DEPLOYMENT=deployments/sepolia.json SALT=1 ACTION=dock  AGENT_KEY=$AGENT_KEY for
 ## 7. Test
 
 ```bash
-forge test --no-match-path "test/fork/*"                            # 86 unit + gate tests, offline
+forge test --no-match-path "test/fork/*"                            # 68 unit + gate tests, offline
 forge test --match-path "test/fork/*"                               # real ENSv2 on a Sepolia fork
 (cd backend && npm test)                                            # backend + page logic
 npx --prefix e2e playwright test --config e2e/playwright.config.js  # full journey in a browser
