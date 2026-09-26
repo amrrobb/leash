@@ -307,6 +307,7 @@ if (typeof document !== "undefined") {
     $("a2-headline").textContent = `Authority up to ${fmt(t.cap)} USDC`;
     $("a2-max").textContent = `max ${fmt(t.cap)} · can only go down`;
     $("a2-name").textContent = snap ? `${snap.state.agentLabel}.leash.eth` : "";
+    $("a2-vault-address").textContent = session.vault ?? "";
     if (snap) $("a2-balances").textContent = balancesText(snap.state);
     const input = $("a2-cap");
     input.max = String(t.cap);
@@ -458,6 +459,11 @@ if (typeof document !== "undefined") {
     }
   }
   $("a2-deposit").addEventListener("click", (e) => deposit(e.currentTarget, "a2-err"));
+  $("a2-copy").addEventListener("click", async (e) => {
+    const b = e.currentTarget;
+    try { await navigator.clipboard.writeText(session.vault ?? ""); b.textContent = "Copied"; } catch { b.textContent = "Select it"; }
+    setTimeout(() => { b.textContent = "Copy"; }, 1500);
+  });
   $("deposit").addEventListener("click", (e) => deposit(e.currentTarget, "dash-err"));
 
   function step(done, text, tx) {

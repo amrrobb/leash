@@ -125,6 +125,7 @@ test.describe.serial("Leash journey on a Sepolia fork: any wallet, its own vault
     await expect(page.getByText(/can only go down/).last()).toBeVisible();
     await page.getByTestId("starting-authority").fill("2000");
     await expect(page.getByTestId("a2-balances")).toHaveText("0 USDC · 0 HYPE");
+    await expect(page.getByTestId("a2-vault-address")).toHaveText(vault); // funding is a transfer to this address; the pair is the agent's
     await page.getByTestId("a2-deposit").click();
     await expect(page.getByTestId("a2-balances")).toHaveText("10,000 USDC · 1,000 HYPE", { timeout: 60_000 });
     await page.screenshot({ path: shot("2-a2") });
