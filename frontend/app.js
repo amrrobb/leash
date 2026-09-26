@@ -90,8 +90,20 @@ if (typeof document !== "undefined") {
   const session = { tier: null };
   let snap = null; // { state, fetchedAt }
 
+  // On a public host the owner routes need a token: open the page once as /app#demo=<DEMO_TOKEN> and it sticks.
+  try {
+    const m = location.hash.match(/demo=([^&]+)/);
+    if (m) {
+      localStorage.setItem("leash.demoToken", decodeURIComponent(m[1]));
+      history.replaceState(null, "", location.pathname);
+    }
+  } catch {}
+  const demoToken = () => { try { return localStorage.getItem("leash.demoToken") || ""; } catch { return ""; } };
+
   const api = async (path, body) => {
-    const res = await fetch(path, body === undefined ? {} : { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+    const headers = { "Content-Type": "application/json" };
+    if (demoToken()) headers["x-demo-token"] = demoToken();
+    const res = await fetch(path, body === undefined ? { headers } : { method: "POST", headers, body: JSON.stringify(body) });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) throw Object.assign(new Error(data.error ?? `HTTP ${res.status}`), { status: res.status });
     return data;

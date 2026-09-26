@@ -1,0 +1,8 @@
+*
+!backend/**
+!frontend/**
+!deployments/**
+backend/node_modules
+backend/*.db*
+backend/test
+frontend/landing/serve.mjs
