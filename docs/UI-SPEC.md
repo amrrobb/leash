@@ -85,7 +85,7 @@ Same card as A, content replaced.
 | Status chip (green) | **Verified · {tier name}** e.g. Verified · Selfie Check | `id="a2-verified"` |
 | Headline (28 px) | **Authority up to {tier cap} USDC** | `id="a2-headline"` |
 | Field: Agent name | `<label>.leash.eth` from the vault — read-only | `data-testid="a2-name"` |
-| Field: Pair | HYPE / USDC — read-only in the demo | |
+| Field: Fund your vault | the vault address + Copy; "send any ERC-20, USDC required". No pair field: the pair is the agent's policy | `id="a2-vault-address"` |
 | Field: Starting authority | number input, prefilled with the tier cap, unit **USDC**, right hint **max {cap} · can only go down** | input `data-testid="starting-authority"`, hint `id="a2-max"` |
 | Note (14 px) | Halves every 24 hours unless you return · Reaches zero in ~3 days | |
 | Primary button | **Create mandate** | `data-testid="create-mandate"` |
@@ -125,7 +125,7 @@ State thresholds: Operating while authority ≥ 40 % of granted · Trimming fill
 |---|---|---|
 | Eyebrow | MANDATE | |
 | Name (19 px / 600) | `<label>.leash.eth` | `data-testid="agent-name"` |
-| Description (muted) | Runs your HYPE/USDC position on 1inch Aqua · agent 0x1234…abcd | `id="agent-addr"` |
+| Description (muted) | Trades on 1inch Aqua from your vault, on pairs of its own choosing (the demo agent runs HYPE/USDC); every trade is bounded by your cap · agent 0x1234…abcd | `id="agent-addr"` |
 | Permission row 1 | **Close positions** — Never decays — right: **Always** (accent, always emphasised) | `data-testid="close-perm"` |
 | Permission row 2 | **Open new ranges** — Needs live authority — right: **Allowed** (accent) / **Paused** (grey) | `data-testid="open-perm"` |
 | Permission row 3 | **Largest trade the market can take** — Larger trades get trimmed — right (mono): **Up to 7,500** / **None** | `data-testid="fill-limit"` |
