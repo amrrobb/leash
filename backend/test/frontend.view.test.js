@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { limitAt, tierOf, screenOf, dashboardView, constraintsFor, balancesText, TIERS } from "../../frontend/app.js";
+import { limitAt, tierOf, screenOf, dashboardView, constraintsFor, balancesText, applyPolicy, TIERS } from "../../frontend/app.js";
 
 const H = 3600;
 const MANDATE = 1n << 40n;
@@ -84,5 +84,13 @@ test("constraints: one credential is a bare request, several are any()", () => {
 test("vault balances read as whole tokens", () => {
   assert.equal(balancesText({ vaultUsdc: "10000000000", vaultHype: "1000000000000000000000" }), "10,000 USDC · 1,000 HYPE");
   assert.equal(balancesText({}), "0 USDC · 0 HYPE");
+});
+
+test("tier caps follow the chain's policy, not the page's defaults", () => {
+  applyPolicy({ tiers: { orb: "20000000000", document: "9000000000", selfie: "3000000000" } });
+  assert.equal(TIERS.orb.cap, 20_000);
+  assert.equal(TIERS.selfie.cap, 3_000);
+  applyPolicy({ tiers: { orb: "15000000000", document: "7500000000", selfie: "2000000000" } }); // restore for other tests
+  assert.equal(TIERS.document.cap, 7_500);
 });
 

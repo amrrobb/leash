@@ -14,6 +14,11 @@ export const vaultAbi = parseAbi([
   "function owner() view returns (address)",
   "function agentLabel() view returns (string)",
   "function labelId() view returns (uint256)",
+  "function CAP_ORB() view returns (uint256)",
+  "function CAP_DOCUMENT() view returns (uint256)",
+  "function CAP_SELFIE() view returns (uint256)",
+  "function PERIOD() view returns (uint256)",
+  "function CUTOFF() view returns (uint256)",
   "function verify()",
   "function setCap(uint256 cap)",
   "function withdraw(address token, uint256 amount)",
@@ -106,6 +111,7 @@ export function createChain({ rpcUrl, backendKey, deployments }) {
   const registry = deployments.userRegistry;
   const factory = deployments.factory;
   const infoCache = new Map();
+  let policyCache = null;
 
   async function send(tx) {
     if (!walletClient) throw Object.assign(new Error("BACKEND_KEY is not set"), { status: 503 });
@@ -119,6 +125,17 @@ export function createChain({ rpcUrl, backendKey, deployments }) {
 
   return {
     publicClient,
+
+    /** Protocol policy read from the Vault code (every factory vault shares it): tier caps and the clock. */
+    async policy() {
+      if (!policyCache) {
+        const ref = deployments.vault;
+        const read = (functionName) => publicClient.readContract({ address: ref, abi: vaultAbi, functionName });
+        const [orb, document, selfie, period, cutoff] = await Promise.all([read("CAP_ORB"), read("CAP_DOCUMENT"), read("CAP_SELFIE"), read("PERIOD"), read("CUTOFF")]);
+        policyCache = { tiers: { orb, document, selfie }, period, cutoff, source: ref };
+      }
+      return policyCache;
+    },
 
     /** True for vaults the factory made, and for the deployment's demo vault. */
     async isKnownVault(vault) {

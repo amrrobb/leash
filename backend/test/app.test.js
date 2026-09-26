@@ -21,6 +21,7 @@ const chain = {
   grantTier: async () => "0xg",
   stampVerified: async () => "0xv",
   buildTx: async (kind, p) => ({ to: kind === "createVault" ? config.deployments.factory : p.vault, data: `0x${kind}` }),
+  policy: async () => ({ tiers: { orb: 15_000_000_000n, document: 7_500_000_000n, selfie: 2_000_000_000n }, period: 86400n, cutoff: 259200n }),
 };
 const sent = [];
 const signer = { address: OWNER, send: async (to, data) => (sent.push([to, data]), "0xsigned") };
@@ -131,5 +132,10 @@ test("agent events are per vault, merge into that vault's feed, and are validate
 test("mergeFeed orders by time then block then log index", () => {
   const out = mergeFeed([{ at: 10, block: 1, logIndex: 0 }, { at: 10, block: 1, logIndex: 1 }], [{ at: 11, block: 0, logIndex: 0 }, { at: 9, block: 0, logIndex: 0 }]);
   assert.deepEqual(out.map((e) => [e.at, e.logIndex]), [[11, 0], [10, 1], [10, 0], [9, 0]]);
+});
+
+test("GET /api/deployment carries the tier policy read from the chain", async () => {
+  const d = await (await fetch(`${base}/api/deployment`)).json();
+  assert.deepEqual(d.policy.tiers, { orb: "15000000000", document: "7500000000", selfie: "2000000000" });
 });
 

@@ -11,6 +11,13 @@ const MANDATE = 1n << 40n;
 const ZERO = "0x0000000000000000000000000000000000000000";
 const SEPOLIA = "0xaa36a7";
 
+/** Tier caps come from the Vault code via /api/deployment; these are only the fallback until it answers. */
+export function applyPolicy(policy) {
+  if (!policy?.tiers) return TIERS;
+  for (const k of ["orb", "document", "selfie"]) if (policy.tiers[k] != null) TIERS[k].cap = Number(BigInt(policy.tiers[k])) / 1e6;
+  return TIERS;
+}
+
 /** Same curve as Vault.limitAt: halve per 24h, linear inside the period, zero from 72h. */
 export function limitAt(base, elapsed) {
   if (elapsed >= CUTOFF) return 0;
@@ -462,7 +469,11 @@ if (typeof document !== "undefined") {
 
   renderTierRows();
   (async () => {
-    try { deployment = await api("/api/deployment"); } catch {}
+    try {
+      deployment = await api("/api/deployment");
+      applyPolicy(deployment.policy);
+      renderTierRows();
+    } catch {}
     const fromUrl = new URLSearchParams(location.search).get("vault");
     if (fromUrl && /^0x[0-9a-fA-F]{40}$/.test(fromUrl)) session.vault = fromUrl;
     // A wallet that connected before: pick it up silently if the provider still exposes it.

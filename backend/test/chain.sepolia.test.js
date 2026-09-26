@@ -37,3 +37,10 @@ test("the factory answers vaultOf and isVault on Sepolia", { skip: !config.rpcUr
   assert.match(tx.data, /^0x[0-9a-f]+$/);
 });
 
+test("the Vault code on Sepolia states the tier policy", { skip: !config.rpcUrl && "SEPOLIA_RPC not set" }, async () => {
+  const p = await createChain(config).policy();
+  assert.equal(p.tiers.selfie, 2_000_000_000n);
+  assert.equal(p.tiers.orb, 15_000_000_000n);
+  assert.equal(p.cutoff, 259_200n);
+});
+

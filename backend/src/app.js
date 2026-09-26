@@ -52,7 +52,7 @@ export function createApp(deps) {
 
   const routes = {
     "GET /api/health": async () => ({ ok: true }),
-    "GET /api/deployment": async () => config.deployments,
+    "GET /api/deployment": async () => ({ ...config.deployments, policy: await chain.policy().catch(() => null) }),
     /** Which vault a wallet owns (zero address if none). */
     "GET /api/vault": async (_b, q) => {
       const owner = q.get("owner");
