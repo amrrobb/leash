@@ -121,9 +121,14 @@ npx --prefix e2e playwright test --config e2e/playwright.config.js  # full journ
 ```
 A local `pre-push` hook runs the offline contract and backend tests.
 
-## 8. Host it (World wants a live link)
+## 8. Hosting (live: https://leash.robbyn.xyz)
 
-Any Node host works. Set the `.env` values there and point `RPC_URL` at real Sepolia. If `DEMO_OWNER_KEY` is set on a public host, also set `DEMO_TOKEN`; otherwise the demo routes refuse non-local callers.
+One container (`Dockerfile`: Node 22, serves `/`, `/app` and the API) on the Contabo VPS through Coolify, DNS on Cloudflare (`leash` A record → the VPS, unproxied so Coolify's TLS works).
+
+- Coolify project **Leash**, app `leash`, build pack `dockerfile`, port 8787, deploys `main` from GitHub. Redeploy: push to `main`, then `POST /api/v1/applications/<uuid>/start` or the Coolify UI.
+- Environment: `SEPOLIA_RPC`, `BACKEND_KEY`, `DEMO_OWNER_KEY` (= `OWNER_KEY`), `DEMO_TOKEN`, `WORLD_*` (production mode, legacy allowed, all four credentials), `DB_PATH=/data/leash.db`.
+- Owner and agent routes are loopback-only unless the caller sends `x-demo-token`. In the browser, open `https://leash.robbyn.xyz/app#demo=<DEMO_TOKEN>` once; the page stores it and sends it from then on. The agent and market scripts send it when `DEMO_TOKEN` is in their env (`BACKEND=https://leash.robbyn.xyz`).
+- The SQLite file lives in the container's `/data` volume; a fresh deploy keeps it.
 
 ## 9. Before submitting
 

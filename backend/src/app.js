@@ -91,7 +91,7 @@ export function createApp(deps) {
     const key = `${req.method} ${new URL(req.url, "http://x").pathname}`;
     const route = routes[key];
     if (!route) {
-      if (req.method === "GET" && staticDir) return serveStatic(req, res);
+      if ((req.method === "GET" || req.method === "HEAD") && staticDir) return serveStatic(req, res); // HEAD: link checkers
       return json(res, 404, { error: "not found" });
     }
     let body;

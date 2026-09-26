@@ -78,6 +78,7 @@ test("demo routes do not exist without a demo signer", async () => {
 test("serves the frontend and blocks path traversal", async () => {
   assert.equal(await (await fetch(`${base}/`)).text(), "<h1>leash</h1>");
   assert.equal(await (await fetch(`${base}/app`)).text(), "<h1>leash</h1>");
+  assert.equal((await fetch(`${base}/`, { method: "HEAD" })).status, 200);
   const res = await fetch(`${base}/..%2Fsecret.txt`);
   assert.notEqual(await res.text(), "nope");
 });

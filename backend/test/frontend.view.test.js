@@ -60,6 +60,8 @@ test("C after 72 demo hours: close-only, grey, zero reached", () => {
   assert.equal(v.zeroText, "Reached");
   assert.equal(v.fillText, "None");
   assert.match(v.cNote, /Nobody verified/);
+  assert.equal(v.lastText, "Over 3 days ago");
+  assert.equal(dashboardView(snap(), 1000 + 100_000).lastText, "Over 3 days ago", "never shows absurd demo-scaled spans");
 });
 
 test("C after revoke says so, even with time left", () => {

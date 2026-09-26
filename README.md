@@ -2,7 +2,7 @@
 
 > Permission for an AI agent that shrinks on its own unless a verified human keeps showing up.
 
-Built solo at **ETHGlobal Tokyo 2026** (From Scratch track). Live on Sepolia. Targets: ENSv2, World ID, 1inch Aqua.
+Built solo at **ETHGlobal Tokyo 2026** (From Scratch track). **Live: [leash.robbyn.xyz](https://leash.robbyn.xyz)** (dashboard at [/app](https://leash.robbyn.xyz/app)), contracts on Sepolia. Targets: ENSv2, World ID, 1inch Aqua.
 
 ![Leash landing](docs/img/landing.png)
 
