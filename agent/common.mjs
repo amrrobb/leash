@@ -8,6 +8,8 @@ export const root = fileURLToPath(new URL("..", import.meta.url));
 export const rpcUrl = process.env.RPC_URL ?? process.env.SEPOLIA_RPC;
 export const deploymentPath = process.env.DEPLOYMENT ?? `${root}deployments/sepolia.json`;
 export const deployment = JSON.parse(readFileSync(deploymentPath, "utf8"));
+// The vault this agent works for. With the factory, every owner has their own: pass VAULT.
+if (process.env.VAULT) deployment.vault = process.env.VAULT;
 export const backend = process.env.BACKEND ?? "http://127.0.0.1:8787";
 
 export const publicClient = createPublicClient({ chain: sepolia, transport: http(rpcUrl) });

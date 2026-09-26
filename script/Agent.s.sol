@@ -21,7 +21,8 @@ contract Agent is Script {
 
     function run() external {
         string memory json = vm.readFile(vm.envString("DEPLOYMENT"));
-        Vault vault = Vault(vm.parseJsonAddress(json, ".vault"));
+        // VAULT overrides the deployment's demo vault: with the factory every user has their own.
+        Vault vault = Vault(vm.envOr("VAULT", vm.parseJsonAddress(json, ".vault")));
         address router = vm.parseJsonAddress(json, ".router");
         address usdc = vm.parseJsonAddress(json, ".usdc");
         address hype = vm.envOr("OTHER", vm.parseJsonAddress(json, ".hype"));
