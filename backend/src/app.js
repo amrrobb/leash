@@ -30,6 +30,13 @@ export function demoAllowed(req, token) {
   return loopback || (Boolean(token) && req.headers["x-demo-token"] === token);
 }
 
+const AGENT_KINDS = new Set(["blocked", "closed", "full", "trim"]);
+
+/** Chain events and the agent's own reports, newest first. */
+export function mergeFeed(chainFeed, agentEvents, limit = 12) {
+  return [...chainFeed, ...agentEvents].sort((x, y) => y.at - x.at || y.block - x.block || y.logIndex - x.logIndex).slice(0, limit);
+}
+
 /** HTTP app. `deps`: { config, store, chain, demo?, demoToken?, fetchImpl?, staticDir, vendorDir? } */
 export function createApp(deps) {
   const { config, store, chain, demo, staticDir } = deps;
@@ -39,7 +46,13 @@ export function createApp(deps) {
     "GET /api/health": async () => ({ ok: true }),
     "GET /api/deployment": async () => config.deployments,
     "GET /api/state": async () => chain.readState(),
-    "GET /api/feed": async () => chain.readFeed(),
+    "GET /api/feed": async () => mergeFeed(await chain.readFeed(20), store.recentEvents(20)),
+    // The agent reports what it tried; a refused ship reverts and leaves nothing on chain otherwise.
+    "POST /api/agent/event": async (body) => {
+      if (!AGENT_KINDS.has(body?.kind) || typeof body.title !== "string" || typeof body.detail !== "string") throw Object.assign(new Error("kind, title, detail required"), { status: 400 });
+      store.addEvent(body.kind, body.title.slice(0, 120), body.detail.slice(0, 200));
+      return { ok: true };
+    },
     "POST /api/rp-context": async () => issueRpContext({ world: config.world, store }),
     "POST /api/proof": async (body) =>
       handleProof({ result: body, world: config.world, store, chain, vault, fetchImpl: deps.fetchImpl }),
@@ -78,7 +91,7 @@ export function createApp(deps) {
       return json(res, 404, { error: "not found" });
     }
     let body;
-    if (key.startsWith("POST /api/demo/") && !demoAllowed(req, deps.demoToken)) return json(res, 403, { error: "demo routes are local-only" });
+    if ((key.startsWith("POST /api/demo/") || key === "POST /api/agent/event") && !demoAllowed(req, deps.demoToken)) return json(res, 403, { error: "local-only route" });
     try {
       body = req.method === "POST" ? await readBody(req) : undefined;
       json(res, 200, await route(body));
